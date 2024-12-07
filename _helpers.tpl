@@ -1,28 +1,13 @@
 {{/*
-Set the default host if not provided in values.yaml
+Generate the full name of the application based on the chart name and release name.
 */}}
-{{- define "chart-template.host" -}}
-{{- if .Values.host -}}
-{{ .Values.host }}
-{{- else -}}
-{{ .Values.name }}.sulibot.com
-{{- end -}}
+{{- define "chart-template.fullname" -}}
+{{- printf "%s-%s" .Release.Name .Chart.Name | trunc 63 | trimSuffix "-" -}}
 {{- end }}
 
 {{/*
-Set the default Gateway name if not provided in values.yaml
+Generate the name of the chart based on the chart name only.
 */}}
-{{- define "chart-template.gatewayName" -}}
-{{- if .Values.gateway.name -}}
-{{ .Values.gateway.name }}
-{{- else -}}
-gateway-external
-{{- end -}}
-{{- end }}
-
-{{/*
-Set the default shared PVC name if not provided in values.yaml
-*/}}
-{{- define "chart-template.sharedMediaName" -}}
-shared-media-pvc
+{{- define "chart-template.name" -}}
+{{- .Chart.Name -}}
 {{- end }}
