@@ -11,85 +11,158 @@ This repository provides a reusable Helm chart template that can be used to depl
 
 ## Helm How-To
 
-### 1. View the Values File
+### 1. Add the Chart to Helm
 
-You can inspect the default `values.yaml` file provided in the chart repository:
+#### Option 1: Install the Helm Repo
+To install the chart from a Helm repository:
+
+1. Add the repository:
+    ```bash
+    helm repo add chart-template https://github.com/sulibot/chart-template
+    helm repo update
+    ```
+
+2. Install the chart:
+    ```bash
+    helm install app-name chart-template/chart-template       --namespace media       -f values.yaml
+    ```
+
+#### Option 2: Use the Chart Locally
+If you have cloned the chart repository locally:
+
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/sulibot/chart-template.git
+    cd chart-template
+    ```
+
+2. Install the chart:
+    ```bash
+    helm install app-name ./chart-template       --namespace media       -f values.yaml
+    ```
+
+---
+
+### 2. View and Modify the Values File
+
+Inspect the default `values.yaml` file to customize it for your application:
 
 ```bash
 cat chart-template/values.yaml
 ```
 
-Modify this file according to your application's requirements.
+Edit the file to adjust values like `name`, `namespace`, and resource limits:
 
----
-
-### 2. Add the Chart to Helm
-
-To add this chart to your local Helm repository:
-
-```bash
-helm repo add chart-template https://github.com/sulibot/chart-template
-helm repo update
+```yaml
+name: app-name
+namespace: media
+resources:
+  enabled: true
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
 ```
 
 ---
 
-### 3. Deploy with Helm
+### 3. Troubleshooting Helm Deployments
 
-Deploy the chart using Helm:
+- **Check Helm Logs**:
+    ```bash
+    helm history app-name
+    helm status app-name
+    ```
 
-```bash
-helm install app-name ./chart-template -f values.yaml --namespace media
-```
+- **Debug Installations**:
+    ```bash
+    helm install app-name ./chart-template --debug --dry-run
+    ```
 
-You can also use the following Helm options:
-
-- `--namespace`: Specify the namespace for the deployment.
-- `--set`: Override specific values inline.
-- `--values`: Specify the values file to use.
-
-Example with overrides:
-
-```bash
-helm install app-name ./chart-template   --set name=custom-app   --set namespace=custom-namespace   -f values.yaml
-```
+- **Upgrade or Rollback**:
+    ```bash
+    helm upgrade app-name ./chart-template -f values.yaml
+    helm rollback app-name <revision_number>
+    ```
 
 ---
 
 ## Flux How-To
 
-### 1. Add the Chart to Git Repository
+### Assumptions
+- Flux is installed and functional in your cluster.
+- Your repository is already managed by Flux.
 
-You can integrate the chart into your Flux GitOps workflow by creating a HelmRelease resource. First, ensure you’ve cloned the desired Git repository managed by Flux:
+---
+
+### 1. Create a Source for Helm
+
+To create a Helm source pointing to the chart repository:
 
 ```bash
-git clone https://github.com/sulibot/your-flux-repo.git
-cd your-flux-repo
+flux create source helm chart-template   --url=https://github.com/sulibot/chart-template   --interval=1h   --export > chart-template-source.yaml
+```
+
+Apply the Helm source to the cluster:
+
+```bash
+kubectl apply -f chart-template-source.yaml
+```
+
+Verify the Helm source:
+
+```bash
+flux get sources helm
 ```
 
 ---
 
-### 2. Flux Command to Create HelmRelease
+### 2. Create a HelmRelease
 
-Use the `flux` CLI to create the HelmRelease resource:
+Use the `flux` CLI to create a HelmRelease resource for the chart:
 
 ```bash
-flux create helmrelease app-name   --source GitRepository/sulibot   --chart https://github.com/sulibot/chart-template   --values values.yaml   --chart-version 0.1.0   --interval 1h   --export > app-name-helmrelease.yaml
+flux create helmrelease app-name   --source HelmRepository/chart-template   --chart chart-template   --values values.yaml   --chart-version 0.1.0   --interval 1h   --export > app-name-helmrelease.yaml
+```
+
+Apply the HelmRelease to the cluster:
+
+```bash
+kubectl apply -f app-name-helmrelease.yaml
+```
+
+Verify the HelmRelease:
+
+```bash
+flux get helmreleases -A
 ```
 
 ---
 
-### 3. Apply the HelmRelease
+### 3. Troubleshooting Flux
 
-Commit the `app-name-helmrelease.yaml` file to your Flux repository and push the changes:
+- **Check HelmRelease Status**:
+    ```bash
+    flux get helmreleases -A
+    ```
 
-```bash
-git add app-name-helmrelease.yaml
-git commit -m "Add HelmRelease for app-name"
-git push origin main
-```
+- **Check Source Status**:
+    ```bash
+    flux get sources helm -A
+    ```
 
-Once Flux synchronizes with the repository, the application will be deployed.
+- **View Logs**:
+    ```bash
+    kubectl logs -n flux-system deployment/helm-controller
+    ```
+
+- **Reconcile Resources**:
+    ```bash
+    flux reconcile helmrelease app-name
+    flux reconcile source helm chart-template
+    ```
 
 ---
 
