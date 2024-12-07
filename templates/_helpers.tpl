@@ -2,7 +2,7 @@
 Generate the full name of the application based on the release name and chart name.
 */}}
 {{- define "chart-template.fullname" -}}
-{{ .Release.Name | trunc 63 | trimSuffix "-" }}
+{{ .Release.Name | default "default-release" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
