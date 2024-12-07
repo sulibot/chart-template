@@ -28,7 +28,7 @@ app.kubernetes.io/managed-by: {{ $.Release.Service | default "Helm" }}
 Generate annotations for the application based on the values and resource type.
 */}}
 {{- define "chart-template.annotations" -}}
-description: "Annotations for {{ .resourceType }}"
+description: "Annotations for {{ .resourceType | default "unknown" }}"
 {{- end }}
 
 {{/*
@@ -38,6 +38,7 @@ Debugging Helper: Outputs debug information when enabled in values.yaml.
 debug:
   Chart.Name: {{ $.Chart.Name | default "nil" }}
   Release.Name: {{ $.Release.Name | default "nil" }}
+  Chart.AppVersion: {{ $.Chart.AppVersion | default "nil" }}
+  Release.Service: {{ $.Release.Service | default "nil" }}
+  ResourceType: {{ .resourceType | default "unknown" }}
 {{- end }}
-
-
