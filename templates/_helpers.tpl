@@ -11,3 +11,14 @@ Generate the name of the chart based on the chart name only.
 {{- define "chart-template.name" -}}
 {{- .Chart.Name -}}
 {{- end }}
+
+{{/*
+Generate the gateway name. Defaults to "gateway-internal" if not set in values.yaml.
+*/}}
+{{- define "chart-template.gatewayName" -}}
+{{- if .Values.gateway.name -}}
+{{- .Values.gateway.name -}}
+{{- else -}}
+gateway-internal
+{{- end -}}
+{{- end }}

@@ -1,4 +1,4 @@
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: {{ include "chart-template.fullname" . }}-route
@@ -6,8 +6,9 @@ metadata:
 spec:
   parentRefs:
     - name: {{ include "chart-template.gatewayName" . }}
+      namespace: {{ .Values.gateway.namespace }}
   hostnames:
-    - {{ include "chart-template.host" . }}
+    - "{{ .Values.host | default (printf \"%s.sulibot.com\" .Values.name) }}"
   rules:
     - matches:
         - path:
