@@ -39,3 +39,9 @@ Debugging Helper: Outputs debug information when enabled in values.yaml.
 debug: "chart name = {{ .Chart.Name | default "unknown-chart" }} | release name = {{ .Release.Name | default "default-instance" }}"
 {{- end -}}
 {{- end }}
+
+{{- define "chart-template.debug" -}}
+debug:
+  Chart.Name: {{ $.Chart.Name | default "nil" }}
+  Release.Name: {{ $.Release.Name | default "nil" }}
+{{- end }}
