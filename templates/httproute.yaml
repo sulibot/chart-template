@@ -4,9 +4,9 @@ metadata:
   name: {{ include "chart-template.fullname" . }}-route
   namespace: {{ .Values.gateway.namespace }}
   labels:
-    {{- include "chart-template.labels" (dict "resourceType" "httproute" "Values" .Values "Chart" .Chart "Release" (dict "Name" (.Release.Name | default "default-release") "Service" (.Release.Service | default "Helm"))) | nindent 4 }}
+    {{- include "chart-template.labels" (dict "resourceType" "httproute" "Values" .Values) }}
   annotations:
-    {{- include "chart-template.annotations" (dict "resourceType" "httproute" "Values" .Values) | nindent 4 }}
+    {{- include "chart-template.annotations" (dict "resourceType" "httproute" "Values" .Values) }}
 spec:
   parentRefs:
     - name: {{ .Values.gateway.name | default "gateway-internal" }}
