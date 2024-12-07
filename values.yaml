@@ -2,9 +2,6 @@
 name: app-name              # Application name (used for naming resources)
 namespace: media            # Namespace for the application, PVCs, and services
 
-# Domain configuration
-domain: sulibot.com         # Default domain for the application (override if needed)
-
 # Docker container settings
 image:
   repository: my-container-repo
@@ -25,6 +22,7 @@ ports:
 gateway:
   name: gateway-internal    # Optional: Defaults to "gateway-internal"
   namespace: network        # Namespace where the Gateway and HTTPRoute reside
+  domain: sulibot.com       # Default domain for the application (override if needed)
 
 # Deployment resources
 resources:
@@ -36,12 +34,21 @@ resources:
     memory: "512Mi"
     cpu: "500m"
 
+# Security context for the deployment
+securityContext:
+  enabled: false             # Security context is disabled by default
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  readOnlyRootFilesystem: false
+  allowPrivilegeEscalation: false
+
 # Config PVC configuration
 config:
   enabled: true              # PVC is enabled by default
   resources:
     requests:
-      # storage: 5Gi         # Optional: Defaults to 1Gi if not set
+      # Removed the optional storage line
   mountPath: /config         # Default mount path for config PVC
 
 # Shared PVC configuration
