@@ -1,46 +1,32 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{ include "chart-template.fullname" . }}
-  namespace: {{ .Values.namespace }}
-  labels:
-    {{- include "chart-template.labels" (dict "resourceType" "deployment" "Values" .Values) | nindent 4 }}
-  annotations:
-    {{- include "chart-template.annotations" (dict "resourceType" "deployment" "Values" .Values) | nindent 4 }}
-spec:
-  replicas: {{ .Values.replicaCount }}
-  selector:
-    matchLabels:
-      app: {{ include "chart-template.fullname" . }}
-  template:
-    metadata:
-      labels:
-        {{- include "chart-template.labels" (dict "resourceType" "deployment" "Values" .Values) | nindent 8 }}
-      annotations:
-        {{- include "chart-template.annotations" (dict "resourceType" "deployment" "Values" .Values) | nindent 8 }}
-    spec:
-      containers:
-        - name: {{ include "chart-template.fullname" . }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: {{ .Values.ports.targetPort }}
-          env:
-            - name: TZ
-              value: "{{ .Values.timezone | default "America/Los_Angeles" }}"
-          volumeMounts:
-            - name: config
-              mountPath: {{ .Values.config.mountPath | default "/config" }}
-            {{- if .Values.sharedMedia.enabled }}
-            - name: shared-media
-              mountPath: {{ .Values.sharedMedia.mountPath | default "/media" }}
-            {{- end }}
-      volumes:
-        - name: config
-          persistentVolumeClaim:
-            claimName: {{ include "chart-template.fullname" . }}-config-pvc
-        {{- if .Values.sharedMedia.enabled }}
-        - name: shared-media
-          persistentVolumeClaim:
-            claimName: shared-media-pvc
-        {{- end }}
+{{/*
+Generate the full name of the application based on the release name and chart name.
+*/}}
+{{- define "chart-template.fullname" -}}
+{{ .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Generate the name of the chart based on the chart name only.
+*/}}
+{{- define "chart-template.name" -}}
+{{ .Chart.Name }}
+{{- end }}
+
+{{/*
+Generate labels for the application based on the values and resource type.
+*/}}
+{{- define "chart-template.labels" -}}
+{{- $resourceType := .resourceType -}}
+app.kubernetes.io/name: {{ $.Chart.Name }}
+app.kubernetes.io/instance: {{ $.Release.Name }}
+app.kubernetes.io/version: {{ $.Chart.AppVersion }}
+app.kubernetes.io/component: {{ $resourceType }}
+app.kubernetes.io/managed-by: {{ $.Release.Service }}
+{{- end }}
+
+{{/*
+Generate annotations for the application based on the values and resource type.
+*/}}
+{{- define "chart-template.annotations" -}}
+description: "Annotations for {{ .resourceType }}"
+{{- end }}
