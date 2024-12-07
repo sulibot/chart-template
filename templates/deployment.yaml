@@ -39,6 +39,15 @@ spec:
             readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
             allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
           {{- end }}
+          {{- if .Values.resources.enabled }}
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory }}
+              cpu: {{ .Values.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+          {{- end }}
           volumeMounts:
             - name: config
               mountPath: {{ .Values.config.mountPath | default "/config" }}
