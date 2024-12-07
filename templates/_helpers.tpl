@@ -37,11 +37,11 @@ Debugging Helper: Outputs debug information when enabled in values.yaml.
 {{- define "chart-template.debug" -}}
 {{- if .Values.labels.debug -}}
 debug:
-  chart_exists: "{{ .Chart | not | ternary "false" "true" }}"
+  release_name_exists: "{{ .Release | not | ternary "false" "true" }}"
+  release_name: "{{ .Release.Name | default "nil" }}"
+  namespace: "{{ .Values.namespace | default "default" }}"
   chart_name: "{{ if .Chart }}{{ default "nil" .Chart.Name }}{{ else }}nil{{ end }}"
   chart_version: "{{ if .Chart }}{{ default "nil" .Chart.Version }}{{ else }}nil{{ end }}"
-  release_name: "{{ .Release.Name | default "default-instance" }}"
-  namespace: "{{ .Values.namespace | default "default" }}"
   image: "{{ .Values.image.repository | default "unknown" }}:{{ .Values.image.tag | default "latest" }}"
 {{- end }}
 {{- end }}
