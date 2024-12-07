@@ -16,12 +16,12 @@ Generate the name of the chart based on the chart name only.
 Generate labels for the application based on the values and resource type.
 */}}
 {{- define "chart-template.labels" -}}
-{{- $resourceType := .resourceType -}}
-app.kubernetes.io/name: {{ $.Chart.Name | default "unknown-chart" }}
-app.kubernetes.io/instance: {{ $.Release.Name | default "default-instance" }}
-app.kubernetes.io/version: {{ $.Chart.AppVersion | default "0.1.0" }}
-app.kubernetes.io/component: {{ $resourceType | default "component" }}
-app.kubernetes.io/managed-by: {{ $.Release.Service | default "Helm" }}
+{{- $resourceType := .resourceType | default "unknown" -}}
+app.kubernetes.io/name: {{ .Chart.Name | default "unknown-chart" }}
+app.kubernetes.io/instance: {{ .Release.Name | default "default-instance" }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | default "0.1.0" }}
+app.kubernetes.io/component: {{ $resourceType }}
+app.kubernetes.io/managed-by: {{ .Release.Service | default "Helm" }}
 {{- end }}
 
 {{/*
@@ -36,9 +36,9 @@ Debugging Helper: Outputs debug information when enabled in values.yaml.
 */}}
 {{- define "chart-template.debug" -}}
 debug:
-  Chart.Name: {{ $.Chart.Name | default "nil" }}
-  Release.Name: {{ $.Release.Name | default "nil" }}
-  Chart.AppVersion: {{ $.Chart.AppVersion | default "nil" }}
-  Release.Service: {{ $.Release.Service | default "nil" }}
+  Chart.Name: {{ .Chart.Name | default "nil" }}
+  Release.Name: {{ .Release.Name | default "nil" }}
+  Chart.AppVersion: {{ .Chart.AppVersion | default "nil" }}
+  Release.Service: {{ .Release.Service | default "nil" }}
   ResourceType: {{ .resourceType | default "unknown" }}
 {{- end }}
