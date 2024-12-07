@@ -6,7 +6,9 @@ namespace: media            # Namespace for the application, PVCs, and services
 image:
   repository: my-container-repo
   tag: latest
-  pullPolicy: IfNotPresent
+
+# Timezone
+timezone: "America/Los_Angeles"  # Default timezone for the application
 
 # Replicas
 replicaCount: 1
@@ -14,7 +16,7 @@ replicaCount: 1
 # Ports
 ports:
   servicePort: 80           # Port exposed by the service
-  targetPort: 8080          # Container's internal port
+  targetPort: 8080
 
 # Networking
 host:                       # Optional: Defaults to "<name>.sulibot.com" if not set
@@ -26,18 +28,11 @@ gateway:
 resources:
   enabled: false            # Resource limits and requests are disabled by default
   requests:
-    memory: "256Mi"         # Default memory request (used only if enabled is true)
-    cpu: "250m"             # Default CPU request (used only if enabled is true)
+    memory: "256Mi"
+    cpu: "250m"
   limits:
-    memory: "512Mi"         # Default memory limit (used only if enabled is true)
-    cpu: "500m"             # Default CPU limit (used only if enabled is true)
-
-# Security context settings
-securityContext:
-  runAsUser: 1000
-  runAsGroup: 1000
-  fsGroup: 1000
-  readOnlyRootFilesystem: true
+    memory: "512Mi"
+    cpu: "500m"
 
 # Config PVC configuration
 config:
