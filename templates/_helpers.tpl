@@ -30,3 +30,12 @@ Generate annotations for the application based on the values and resource type.
 {{- define "chart-template.annotations" -}}
 description: "Annotations for {{ .resourceType }}"
 {{- end }}
+
+{{/*
+Debugging Helper: Outputs debug information when enabled in values.yaml.
+*/}}
+{{- define "chart-template.debug" -}}
+{{- if .Values.labels.debug -}}
+debug: "chart name = {{ .Chart.Name | default "unknown-chart" }} | release name = {{ .Release.Name | default "default-instance" }}"
+{{- end -}}
+{{- end }}
