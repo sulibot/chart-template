@@ -6,7 +6,7 @@ Generate the full name of the application based on the release name and chart na
 {{- end }}
 
 {{/*
-Generate the name of the chart based on the chart name only.
+Generate the name of the chart based on the chart name only, with a default value.
 */}}
 {{- define "chart-template.name" -}}
 {{ .Chart.Name | default "default-chart" }}
