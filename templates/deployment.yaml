@@ -42,12 +42,16 @@ spec:
           volumeMounts:
             - name: config
               mountPath: {{ .Values.config.mountPath | default "/config" }}
+            {{- if .Values.sharedMedia.enabled }}
             - name: shared-media
               mountPath: {{ .Values.sharedMedia.mountPath | default "/media" }}
+            {{- end }}
       volumes:
         - name: config
           persistentVolumeClaim:
             claimName: {{ include "chart-template.fullname" . }}-config-pvc
+        {{- if .Values.sharedMedia.enabled }}
         - name: shared-media
           persistentVolumeClaim:
             claimName: shared-media-pvc
+        {{- end }}
