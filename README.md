@@ -7,86 +7,91 @@ A Helm chart template designed for deploying containerized applications with fle
 
 This repository provides a reusable Helm chart template that can be used to deploy applications on Kubernetes. Below are the steps to deploy an application using this chart.
 
-### 1. Clone the Repository
+---
+
+## Helm How-To
+
+### 1. View the Values File
+
+You can inspect the default `values.yaml` file provided in the chart repository:
 
 ```bash
-git clone https://github.com/sulibot/chart-template.git
-cd chart-template
+cat chart-template/values.yaml
 ```
 
-### 2. Configure `values.yaml`
+Modify this file according to your application's requirements.
 
-Modify the `values.yaml` file to suit your application's requirements. Below is an example configuration:
+---
 
-```yaml
-name: app-name
-namespace: media
+### 2. Add the Chart to Helm
 
-image:
-  repository: my-container-repo
-  tag: latest
+To add this chart to your local Helm repository:
 
-resources:
-  enabled: true
-  requests:
-    memory: "256Mi"
-    cpu: "250m"
-  limits:
-    memory: "512Mi"
-    cpu: "500m"
-
-config:
-  enabled: true
-  mountPath: /config
-
-sharedMedia:
-  enabled: true
-  mountPath: /media
+```bash
+helm repo add chart-template https://github.com/sulibot/chart-template
+helm repo update
 ```
+
+---
 
 ### 3. Deploy with Helm
 
-You can deploy the chart using Helm. This chart supports the following Helm options:
-
-- `--namespace`: Specify the namespace for the deployment.
-- `--set`: Override values in `values.yaml`.
-- `--values`: Specify a values file to use.
-
-Example command:
+Deploy the chart using Helm:
 
 ```bash
 helm install app-name ./chart-template -f values.yaml --namespace media
 ```
 
-### 4. Deploy with Flux
+You can also use the following Helm options:
 
-If you're using Flux for GitOps, you can create a HelmRelease resource. This chart supports the following Flux options:
+- `--namespace`: Specify the namespace for the deployment.
+- `--set`: Override specific values inline.
+- `--values`: Specify the values file to use.
 
-- `--source`: Specify the source repository.
-- `--chart`: Specify the Helm chart.
-- `--values`: Path to the values file.
-- `--chart-version`: Specify the chart version.
-- `--interval`: Set the reconciliation interval.
+Example with overrides:
 
-Example command:
+```bash
+helm install app-name ./chart-template   --set name=custom-app   --set namespace=custom-namespace   -f values.yaml
+```
+
+---
+
+## Flux How-To
+
+### 1. Add the Chart to Git Repository
+
+You can integrate the chart into your Flux GitOps workflow by creating a HelmRelease resource. First, ensure you’ve cloned the desired Git repository managed by Flux:
+
+```bash
+git clone https://github.com/sulibot/your-flux-repo.git
+cd your-flux-repo
+```
+
+---
+
+### 2. Flux Command to Create HelmRelease
+
+Use the `flux` CLI to create the HelmRelease resource:
 
 ```bash
 flux create helmrelease app-name   --source GitRepository/sulibot   --chart https://github.com/sulibot/chart-template   --values values.yaml   --chart-version 0.1.0   --interval 1h   --export > app-name-helmrelease.yaml
 ```
 
-Apply the `HelmRelease` manifest to your cluster:
+---
+
+### 3. Apply the HelmRelease
+
+Commit the `app-name-helmrelease.yaml` file to your Flux repository and push the changes:
 
 ```bash
-kubectl apply -f app-name-helmrelease.yaml
+git add app-name-helmrelease.yaml
+git commit -m "Add HelmRelease for app-name"
+git push origin main
 ```
 
-### 5. Verify Deployment
+Once Flux synchronizes with the repository, the application will be deployed.
 
-Check the resources created by the Helm chart:
-
-```bash
-kubectl get all -n media
-```
+---
 
 ## Features
 
@@ -94,6 +99,8 @@ kubectl get all -n media
 - **Persistent Volume Claims**: Supports application-specific config PVCs and shared media PVCs.
 - **Networking**: Easily configure Gateway and HTTPRoute for custom hostnames.
 - **Health Probes**: Liveness, Readiness, and Startup probes for monitoring application health.
+
+---
 
 ## Customization
 
@@ -110,10 +117,4 @@ kubectl get all -n media
 4. **Health Probes**:
    - Configure probes for liveness, readiness, and startup checks.
 
-## Contributing
-
-Contributions are welcome! Feel free to submit issues or pull requests to enhance the chart.
-
-## License
-
-This project is licensed under the MIT License.
+---
