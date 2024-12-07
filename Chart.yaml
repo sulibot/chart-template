@@ -1,0 +1,6 @@
+apiVersion: v2
+name: chart-template
+description: A reusable Helm chart template for deploying containerized applications
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

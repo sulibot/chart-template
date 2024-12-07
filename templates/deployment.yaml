@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "chart-template.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ include "chart-template.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "chart-template.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "chart-template.fullname" . }}
+    spec:
+      securityContext:
+        fsGroup: {{ .Values.securityContext.fsGroup | default 1000 }}
+      containers:
+        - name: {{ include "chart-template.fullname" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.ports.targetPort }}
+          volumeMounts:
+            {{- if .Values.pvc.enabled }}
+            - name: config
+              mountPath: {{ .Values.pvc.mountPath | default "/config" }}
+            {{- end }}
+            {{- if .Values.sharedMedia.enabled }}
+            - name: shared-media
+              mountPath: {{ .Values.sharedMedia.mountPath }}
+            {{- end }}
+      volumes:
+        {{- if .Values.pvc.enabled }}
+        - name: config
+          persistentVolumeClaim:
+            claimName: {{ .Values.name }}-config-pvc
+        {{- end }}
+        {{- if .Values.sharedMedia.enabled }}
+        - name: shared-media
+          persistentVolumeClaim:
+            claimName: {{ .Values.sharedMedia.name }}
+        {{- end }}

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "chart-template.fullname" . }}-service
+  namespace: {{ .Values.namespace }}
+spec:
+  ipFamilies:
+    - IPv4
+    - IPv6
+  ipFamilyPolicy: PreferDualStack
+  selector:
+    app: {{ include "chart-template.fullname" . }}
+  ports:
+    - protocol: TCP
+      port: {{ .Values.ports.servicePort }}
+      targetPort: {{ .Values.ports.targetPort }}

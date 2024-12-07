@@ -1,0 +1,78 @@
+# General app metadata
+name: app-name              # Application name
+namespace: media            # Namespace for the application, PVCs, and services
+
+# Docker container settings
+image:
+  repository: my-container-repo
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Replicas
+replicaCount: 1
+
+# Ports
+ports:
+  servicePort: 80
+  targetPort: 8080
+
+# Networking
+host: app-name.sulibot.com   # Default domain for the application
+gateway:
+  name: public-gateway        # Name of the Gateway
+  namespace: network          # Namespace where the Gateway and HTTPRoute reside
+
+# Deployment resources
+resources: {}
+
+# Security context settings
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  readOnlyRootFilesystem: true
+
+# PVC configuration for application data
+pvc:
+  enabled: true              # PVC is enabled by default
+  resources:
+    requests:
+      storage: 5Gi           # Requested storage size
+  storageClassName: csi-cephfs-sc  # Default storage class for config PVC
+  mountPath: /config              # Default mount path for config PVC
+
+# Shared PVC configuration
+sharedMedia:
+  enabled: true              # Shared PVC is enabled by default
+  name: shared-media-pvc     # The name of the shared PVC
+  mountPath: /media          # The path where the PVC will be mounted
+
+# Probes
+probes:
+  liveness:
+    enabled: true
+    path: /healthz
+    port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 3
+    successThreshold: 1
+  readiness:
+    enabled: true
+    path: /ready
+    port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 3
+    successThreshold: 1
+  startup:
+    enabled: false
+    path: /startup
+    port: 8080
+    initialDelaySeconds: 0
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 30
+    successThreshold: 1
