@@ -1,4 +1,13 @@
 {{/*
+Ensure either a tag or a digest is provided for the image.
+*/}}
+{{- define "chart-template.validate-image" -}}
+{{- if and (empty .Values.image.tag) (empty .Values.image.digest) -}}
+  {{ fail "Both 'tag' and 'digest' are empty. Specify at least one in values.yaml" }}
+{{- end }}
+{{- end }}
+
+{{/*
 Generate the full name of the application based on the release name and chart name.
 */}}
 {{- define "chart-template.fullname" -}}
@@ -43,6 +52,6 @@ debug:
   chart_name: "{{ if .Chart }}{{ .Chart.Name | default "nil" }}{{ else }}nil{{ end }}"
   chart_version: "{{ if .Chart }}{{ .Chart.Version | default "nil" }}{{ else }}nil{{ end }}"
   namespace: "{{ .Values.namespace | default "default" }}"
-  image: "{{ .Values.image.repository | default "unknown" }}:{{ .Values.image.tag | default "latest" }}"
+  image: "{{ .Values.image.repository | default "unknown" }}{{ if .Values.image.tag }}:{{ .Values.image.tag }}{{ end }}{{ if .Values.image.digest }}@{{ .Values.image.digest }}{{ end }}"
 {{- end }}
 {{- end }}
