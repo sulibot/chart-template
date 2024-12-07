@@ -1,31 +1,46 @@
-{{/*
-Generate the full name of the application based on the chart name and release name.
-*/}}
-{{- define "chart-template.fullname" -}}
-{{- printf "%s-%s" .Release.Name .Chart.Name | trunc 63 | trimSuffix "-" -}}
-{{- end }}
-
-{{/*
-Generate the name of the chart based on the chart name only.
-*/}}
-{{- define "chart-template.name" -}}
-{{- .Chart.Name -}}
-{{- end }}
-
-{{/*
-Generate combined labels for a resource, including global and resource-specific labels.
-*/}}
-{{- define "chart-template.labels" -}}
-{{- $global := .Values.global.labels }}
-{{- $specific := index .Values.labels .resourceType }}
-{{- merge $global $specific | toYaml | nindent 4 }}
-{{- end }}
-
-{{/*
-Generate combined annotations for a resource, including global and resource-specific annotations.
-*/}}
-{{- define "chart-template.annotations" -}}
-{{- $global := .Values.global.annotations }}
-{{- $specific := index .Values.annotations .resourceType }}
-{{- merge $global $specific | toYaml | nindent 4 }}
-{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "chart-template.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "chart-template.labels" (dict "resourceType" "deployment" "Values" .Values) | nindent 4 }}
+  annotations:
+    {{- include "chart-template.annotations" (dict "resourceType" "deployment" "Values" .Values) | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "chart-template.fullname" . }}
+  template:
+    metadata:
+      labels:
+        {{- include "chart-template.labels" (dict "resourceType" "deployment" "Values" .Values) | nindent 8 }}
+      annotations:
+        {{- include "chart-template.annotations" (dict "resourceType" "deployment" "Values" .Values) | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ include "chart-template.fullname" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.ports.targetPort }}
+          env:
+            - name: TZ
+              value: "{{ .Values.timezone | default "America/Los_Angeles" }}"
+          volumeMounts:
+            - name: config
+              mountPath: {{ .Values.config.mountPath | default "/config" }}
+            {{- if .Values.sharedMedia.enabled }}
+            - name: shared-media
+              mountPath: {{ .Values.sharedMedia.mountPath | default "/media" }}
+            {{- end }}
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: {{ include "chart-template.fullname" . }}-config-pvc
+        {{- if .Values.sharedMedia.enabled }}
+        - name: shared-media
+          persistentVolumeClaim:
+            claimName: shared-media-pvc
+        {{- end }}
