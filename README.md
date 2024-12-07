@@ -43,28 +43,15 @@ If you have cloned the chart repository locally:
 
 ---
 
-### 2. View and Modify the Values File
+### 2. Export Helm Templates
 
-Inspect the default `values.yaml` file to customize it for your application:
+To export Kubernetes manifests from Helm without applying them:
 
 ```bash
-cat chart-template/values.yaml
+helm template app-name ./chart-template   --namespace media   -f values.yaml > app-name-helm-manifests.yaml
 ```
 
-Edit the file to adjust values like `name`, `namespace`, and resource limits:
-
-```yaml
-name: app-name
-namespace: media
-resources:
-  enabled: true
-  requests:
-    memory: "256Mi"
-    cpu: "250m"
-  limits:
-    memory: "512Mi"
-    cpu: "500m"
-```
+The resulting `app-name-helm-manifests.yaml` file contains the Kubernetes resources for the chart.
 
 ---
 
@@ -141,7 +128,25 @@ flux get helmreleases -A
 
 ---
 
-### 3. Troubleshooting Flux
+### 3. Export Flux Manifests
+
+To export all manifests for the HelmRelease and Helm source:
+
+1. Export Helm source:
+    ```bash
+    flux create source helm chart-template       --url=https://github.com/sulibot/chart-template       --interval=1h       --export > chart-template-source.yaml
+    ```
+
+2. Export HelmRelease:
+    ```bash
+    flux create helmrelease app-name       --source HelmRepository/chart-template       --chart chart-template       --values values.yaml       --chart-version 0.1.0       --interval 1h       --export > app-name-helmrelease.yaml
+    ```
+
+These files can be committed to your GitOps repository.
+
+---
+
+### 4. Troubleshooting Flux
 
 - **Check HelmRelease Status**:
     ```bash
