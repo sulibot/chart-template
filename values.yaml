@@ -1,5 +1,5 @@
 # General app metadata
-name: app-name              # Application name (used for naming resources)
+name: app-name              # Application name (used for naming resources and host subdomain)
 namespace: media            # Namespace for the application, PVCs, and services
 
 # Docker container settings
@@ -18,32 +18,30 @@ ports:
   servicePort: 80           # Port exposed by the service
   targetPort: 8080
 
-# Gateway configuration
+# Network configuration
 gateway:
   name: gateway-internal    # Optional: Defaults to "gateway-internal"
   namespace: network        # Namespace where the Gateway and HTTPRoute reside
-  domain: sulibot.com       # Default domain for the application (override if needed)
-
-# Global Labels and Annotations
-global:
-  labels:
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/component: backend
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8080"
+  domain: sulibot.com       # Default domain for hostnames
 
 # Labels and Annotations
-labels:                     # Resource-specific labels
-  deployment:
-    app.kubernetes.io/name: "deployment-app"
+labels:
+  global:
+    app.kubernetes.io/part-of: my-app-group
+    app.kubernetes.io/managed-by: Helm
   service:
-    app.kubernetes.io/name: "service-app"
-annotations:                # Resource-specific annotations
+    app.kubernetes.io/component: backend
   deployment:
-    description: "Deployment resource annotation"
+    custom-deployment-label: true
+
+annotations:
+  global:
+    description: "Global annotation for all resources"
   service:
-    description: "Service resource annotation"
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+  deployment:
+    description: "Custom annotation for deployment"
 
 # Deployment resources
 resources:
@@ -55,21 +53,18 @@ resources:
     memory: "512Mi"
     cpu: "500m"
 
-# Security context for the deployment
+# Security Context
 securityContext:
-  enabled: false             # Security context is disabled by default
+  enabled: false            # Must be explicitly enabled
   runAsUser: 1000
   runAsGroup: 1000
   fsGroup: 1000
-  readOnlyRootFilesystem: false
+  readOnlyRootFilesystem: true
   allowPrivilegeEscalation: false
 
 # Config PVC configuration
 config:
   enabled: true              # PVC is enabled by default
-  resources:
-    requests:
-      # Removed the optional storage line
   mountPath: /config         # Default mount path for config PVC
 
 # Shared PVC configuration
