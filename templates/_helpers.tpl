@@ -39,5 +39,5 @@ debug:
   Chart.Name: {{ $.Chart.Name | default "nil" }}
   Release.Name: {{ $.Release.Name | default "nil" }}
 {{- end }}
-{{- end }}
+
 
