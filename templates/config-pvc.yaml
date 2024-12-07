@@ -8,5 +8,5 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: {{ include "chart-template.defaultConfigStorage" . }}
+      storage: 1Gi  # Hardcoded storage size
   storageClassName: csi-cephfs-sc

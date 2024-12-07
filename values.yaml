@@ -39,8 +39,9 @@ config:
   enabled: true              # PVC is enabled by default
   resources:
     requests:
-      # storage: 5Gi         # Optional: Defaults to 1Gi if not set
-  mountPath: /config         # Default mount path for config PVC
+      # storage: 1Gi         # This field is no longer needed as storage is hardcoded
+  mountPath: /config          # Default mount path for the config PVC
+
 
 # Shared PVC configuration
 sharedMedia:
