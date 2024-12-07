@@ -13,6 +13,13 @@ Generate the name of the chart based on the chart name only.
 {{- end }}
 
 {{/*
+Default PVC storage size.
+*/}}
+{{- define "chart-template.defaultConfigStorage" -}}
+{{- .Values.config.resources.requests.storage | default "1Gi" -}}
+{{- end }}
+
+{{/*
 Generate the gateway name. Defaults to "gateway-internal" if not set in values.yaml.
 */}}
 {{- define "chart-template.gatewayName" -}}
