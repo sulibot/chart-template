@@ -4,7 +4,9 @@ metadata:
   name: {{ include "chart-template.fullname" . }}-service
   namespace: {{ .Values.namespace }}
   labels:
-    app: {{ include "chart-template.fullname" . }}
+    {{- include "chart-template.labels" (dict "resourceType" "service" "Values" .Values) }}
+  annotations:
+    {{- include "chart-template.annotations" (dict "resourceType" "service" "Values" .Values) }}
 spec:
   selector:
     app: {{ include "chart-template.fullname" . }}

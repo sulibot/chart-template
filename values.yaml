@@ -24,6 +24,27 @@ gateway:
   namespace: network        # Namespace where the Gateway and HTTPRoute reside
   domain: sulibot.com       # Default domain for the application (override if needed)
 
+# Global Labels and Annotations
+global:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: backend
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+
+# Labels and Annotations
+labels:                     # Resource-specific labels
+  deployment:
+    app.kubernetes.io/name: "deployment-app"
+  service:
+    app.kubernetes.io/name: "service-app"
+annotations:                # Resource-specific annotations
+  deployment:
+    description: "Deployment resource annotation"
+  service:
+    description: "Service resource annotation"
+
 # Deployment resources
 resources:
   enabled: false            # Resource limits and requests are disabled by default

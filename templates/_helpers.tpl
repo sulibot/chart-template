@@ -1,38 +1,17 @@
 {{/*
-Generate the full name of the application based on the release name only.
+Generate combined labels for a resource, including global and resource-specific labels.
 */}}
-{{- define "chart-template.fullname" -}}
-{{- .Release.Name -}}
+{{- define "chart-template.labels" -}}
+{{- $global := .Values.global.labels }}
+{{- $specific := index .Values.labels .resourceType }}
+{{- merge $global $specific | toYaml | nindent 4 }}
 {{- end }}
 
 {{/*
-Generate the name of the chart based on the chart name only.
+Generate combined annotations for a resource, including global and resource-specific annotations.
 */}}
-{{- define "chart-template.name" -}}
-{{- .Chart.Name -}}
-{{- end }}
-
-{{/*
-Generate the hostname based on app name and domain.
-*/}}
-{{- define "chart-template.hostname" -}}
-{{- printf "%s.%s" .Release.Name .Values.domain | trimSuffix "." -}}
-{{- end }}
-
-{{/*
-Default PVC storage size.
-*/}}
-{{- define "chart-template.defaultConfigStorage" -}}
-{{- default "1Gi" (default .Values.config.resources.requests.storage "") -}}
-{{- end }}
-
-{{/*
-Generate the gateway name. Defaults to "gateway-internal" if not set in values.yaml.
-*/}}
-{{- define "chart-template.gatewayName" -}}
-{{- if .Values.gateway.name -}}
-{{- .Values.gateway.name -}}
-{{- else -}}
-gateway-internal
-{{- end -}}
+{{- define "chart-template.annotations" -}}
+{{- $global := .Values.global.annotations }}
+{{- $specific := index .Values.annotations .resourceType }}
+{{- merge $global $specific | toYaml | nindent 4 }}
 {{- end }}

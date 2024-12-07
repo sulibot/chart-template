@@ -4,7 +4,9 @@ metadata:
   name: {{ include "chart-template.fullname" . }}
   namespace: {{ .Values.namespace }}
   labels:
-    app: {{ include "chart-template.fullname" . }}
+    {{- include "chart-template.labels" (dict "resourceType" "deployment" "Values" .Values) }}
+  annotations:
+    {{- include "chart-template.annotations" (dict "resourceType" "deployment" "Values" .Values) }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -13,7 +15,9 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ include "chart-template.fullname" . }}
+        {{- include "chart-template.labels" (dict "resourceType" "deployment" "Values" .Values) }}
+      annotations:
+        {{- include "chart-template.annotations" (dict "resourceType" "deployment" "Values" .Values) }}
     spec:
       {{- if .Values.securityContext.enabled }}
       securityContext:
