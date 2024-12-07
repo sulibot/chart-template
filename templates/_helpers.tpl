@@ -9,7 +9,7 @@ Generate the full name of the application based on the release name and chart na
 Generate the name of the chart based on the chart name only.
 */}}
 {{- define "chart-template.name" -}}
-{{ .Chart.Name | default "unknown-chart" }}
+{{ if .Chart }}{{ .Chart.Name | default "unknown-chart" }}{{ else }}unknown-chart{{ end }}
 {{- end }}
 
 {{/*
@@ -17,29 +17,15 @@ Generate labels for the application based on the values and resource type.
 */}}
 {{- define "chart-template.labels" -}}
 {{- $resourceType := .resourceType | default "component" -}}
-app.kubernetes.io/name: {{ $.Chart.Name | default "unknown-chart" }}
-app.kubernetes.io/instance: {{ $.Release.Name | default "default-instance" }}
-app.kubernetes.io/version: {{ $.Chart.AppVersion | default "0.1.0" }}
+app.kubernetes.io/name: {{ if .Chart }}{{ .Chart.Name | default "unknown-chart" }}{{ else }}unknown-chart{{ end }}
+app.kubernetes.io/instance: {{ .Release.Name | default "default-instance" }}
+app.kubernetes.io/version: {{ if .Chart }}{{ .Chart.AppVersion | default "0.1.0" }}{{ else }}0.1.0{{ end }}
 app.kubernetes.io/component: {{ $resourceType }}
-app.kubernetes.io/managed-by: {{ $.Release.Service | default "Helm" }}
+app.kubernetes.io/managed-by: {{ .Release.Service | default "Helm" }}
 {{- end }}
 
 {{/*
 Generate annotations for the application based on the values and resource type.
 */}}
 {{- define "chart-template.annotations" -}}
-description: "Annotations for {{ .resourceType | default "unknown" }}"
-{{- end }}
-
-{{/*
-Debugging Helper: Outputs debug information when enabled in values.yaml.
-*/}}
-{{- define "chart-template.debug" -}}
-{{- if .Values.labels.debug -}}
-debug:
-  chart_name: "{{ .Chart.Name | default "unknown-chart" }}"
-  release_name: "{{ .Release.Name | default "default-instance" }}"
-  namespace: "{{ .Values.namespace | default "default" }}"
-  image: "{{ .Values.image.repository | default "unknown" }}:{{ .Values.image.tag | default "latest" }}"
-{{- end }}
-{{- end }}
+description: "Annotations for {{ .resourceType | def
