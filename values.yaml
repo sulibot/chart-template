@@ -1,6 +1,9 @@
 # General app metadata
-name: app-name              # Application name (used for naming resources and host subdomain)
+name: app-name              # Application name (used for naming resources)
 namespace: media            # Namespace for the application, PVCs, and services
+
+# Domain configuration
+domain: sulibot.com         # Default domain for the application (override if needed)
 
 # Docker container settings
 image:
@@ -18,10 +21,9 @@ ports:
   servicePort: 80           # Port exposed by the service
   targetPort: 8080
 
-# Networking
-host:                       # Optional: Defaults to "<name>.sulibot.com" if not set
+# Gateway configuration
 gateway:
-  name: gateway-external    # Default Gateway name
+  name: gateway-internal    # Optional: Defaults to "gateway-internal"
   namespace: network        # Namespace where the Gateway and HTTPRoute reside
 
 # Deployment resources
@@ -39,9 +41,8 @@ config:
   enabled: true              # PVC is enabled by default
   resources:
     requests:
-      # storage: 1Gi         # This field is no longer needed as storage is hardcoded
-  mountPath: /config          # Default mount path for the config PVC
-
+      # storage: 5Gi         # Optional: Defaults to 1Gi if not set
+  mountPath: /config         # Default mount path for config PVC
 
 # Shared PVC configuration
 sharedMedia:

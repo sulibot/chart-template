@@ -13,6 +13,13 @@ Generate the name of the chart based on the chart name only.
 {{- end }}
 
 {{/*
+Generate the hostname based on app name and domain.
+*/}}
+{{- define "chart-template.hostname" -}}
+{{- printf "%s.%s" .Release.Name .Values.domain | trimSuffix "." -}}
+{{- end }}
+
+{{/*
 Default PVC storage size.
 */}}
 {{- define "chart-template.defaultConfigStorage" -}}
