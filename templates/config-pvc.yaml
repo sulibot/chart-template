@@ -1,14 +1,12 @@
-{{- if .Values.config.enabled }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Values.name }}-config-pvc
+  name: {{ include "chart-template.fullname" . }}-config-pvc
   namespace: {{ .Values.namespace }}
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: {{ .Values.config.resources.requests.storage | default "1Gi" }}
+      storage: {{ .Values.config.resources.requests.storage | default "1Gi" }} # Default to 1Gi
   storageClassName: csi-cephfs-sc
-{{- end }}
