@@ -7,8 +7,8 @@ spec:
   parentRefs:
     - name: {{ include "chart-template.gatewayName" . }}
       namespace: {{ .Values.gateway.namespace }}
-  hostnames:
-    - "{{ .Values.host | default (printf \"%s.sulibot.com\" .Values.name) }}"
+hostnames:
+  - {{ .Values.host | default (printf "%s.sulibot.com" .Values.name) }}
   rules:
     - matches:
         - path:
