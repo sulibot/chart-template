@@ -1,8 +1,8 @@
 {{/*
-Generate the full name of the application based on the chart name and release name.
+Generate the full name of the application based on the release name only.
 */}}
 {{- define "chart-template.fullname" -}}
-{{- printf "%s-%s" .Release.Name .Chart.Name | trunc 63 | trimSuffix "-" -}}
+{{- .Release.Name -}}
 {{- end }}
 
 {{/*
@@ -16,7 +16,7 @@ Generate the name of the chart based on the chart name only.
 Default PVC storage size.
 */}}
 {{- define "chart-template.defaultConfigStorage" -}}
-{{- .Values.config.resources.requests.storage | default "1Gi" -}}
+{{- default "1Gi" (default .Values.config.resources.requests.storage "") -}}
 {{- end }}
 
 {{/*
