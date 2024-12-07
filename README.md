@@ -1,189 +1,119 @@
 
-# **chart-template**
+# Chart Template
 
-A reusable Helm chart template for deploying containerized applications in Kubernetes. This chart simplifies application deployment by providing pre-configured templates for deployments, services, HTTPRoutes (for Gateway API), and PersistentVolumeClaims (PVCs).
+A Helm chart template designed for deploying containerized applications with flexibility and reusability. This chart supports optional resource limits, persistent volume claims (PVCs), networking configurations, and health probes.
 
----
+## Usage
 
-## **Getting Started**
+This repository provides a reusable Helm chart template that can be used to deploy applications on Kubernetes. Below are the steps to deploy an application using this chart.
 
-### **1. Clone the Repository**
+### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/sulibot/chart-template.git
 cd chart-template
 ```
 
----
+### 2. Configure `values.yaml`
 
-### **2. Customize `values.yaml`**
-Edit the `values.yaml` file to match your application requirements:
+Modify the `values.yaml` file to suit your application's requirements. Below is an example configuration:
 
-#### Example:
 ```yaml
-# Application-specific settings
-name: radarr
+name: app-name
 namespace: media
 
-# Docker container
 image:
-  repository: linuxserver/radarr
+  repository: my-container-repo
   tag: latest
-  pullPolicy: IfNotPresent
 
-# Networking
-host: radarr.sulibot.com
-gateway:
-  name: public-gateway
-  namespace: network
-
-# PVC for config
-pvc:
+resources:
   enabled: true
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: csi-cephfs-sc
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+config:
+  enabled: true
   mountPath: /config
 
-# Shared PVC for media
-sharedMedia:
-  enabled: true
-  name: shared-media-pvc
-  mountPath: /media
-```
-
----
-
-### **3. Install the Chart**
-Deploy the chart using Helm:
-
-#### Without Flux:
-```bash
-helm install radarr ./chart-template -f values.yaml
-```
-
-#### With FluxCD:
-
-Step 1: Create the GitRepository in Flux
-You must define a GitRepository resource to point Flux to your Helm chart source:
-
-Flux install the git repo:
-```
-bash
-Copy code
-flux create source git sulibot \
-  --url=https://github.com/sulibot/chart-template.git \
-  --branch=main \
-  --interval=1m \
-  --export > sulibot-gitrepository.yaml
-```
-
-Create a HelmRelease manifest:
-```bash
-flux create helmrelease radarr \
-  --source GitRepository/sulibot \
-  --chart ./chart-template \
-  --values values.yaml \
-  --chart-version 0.1.0 \
-  --interval 1h \
-  --export > radarr-helmrelease.yaml
-```
-Apply the manifest:
-```bash
-kubectl apply -f radarr-helmrelease.yaml
-```
-
----
-
-## **Examples**
-
-### **Basic Example: Single Application**
-Deploy an application called `radarr` with a custom configuration path and a shared media volume:
-```yaml
-name: radarr
-namespace: media
-image:
-  repository: linuxserver/radarr
-  tag: latest
-host: radarr.sulibot.com
-pvc:
-  enabled: true
-  resources:
-    requests:
-      storage: 5Gi
 sharedMedia:
   enabled: true
   mountPath: /media
 ```
 
-### **Advanced Example: Dual-Stack Networking**
-Deploy an application with dual-stack networking and a larger persistent storage volume:
-```yaml
-name: sonarr
-namespace: media
-image:
-  repository: linuxserver/sonarr
-  tag: latest
-host: sonarr.sulibot.com
-pvc:
-  enabled: true
-  resources:
-    requests:
-      storage: 20Gi
-sharedMedia:
-  enabled: true
-  mountPath: /shared-media
-```
+### 3. Deploy with Helm
 
-Deploy using Helm:
+You can deploy the chart using Helm. This chart supports the following Helm options:
+
+- `--namespace`: Specify the namespace for the deployment.
+- `--set`: Override values in `values.yaml`.
+- `--values`: Specify a values file to use.
+
+Example command:
+
 ```bash
-helm install sonarr ./chart-template -f values.yaml
+helm install app-name ./chart-template -f values.yaml --namespace media
 ```
 
----
+### 4. Deploy with Flux
 
-## **Directory Structure**
+If you're using Flux for GitOps, you can create a HelmRelease resource. This chart supports the following Flux options:
+
+- `--source`: Specify the source repository.
+- `--chart`: Specify the Helm chart.
+- `--values`: Path to the values file.
+- `--chart-version`: Specify the chart version.
+- `--interval`: Set the reconciliation interval.
+
+Example command:
+
+```bash
+flux create helmrelease app-name   --source GitRepository/sulibot   --chart https://github.com/sulibot/chart-template   --values values.yaml   --chart-version 0.1.0   --interval 1h   --export > app-name-helmrelease.yaml
 ```
-chart-template/
-├── Chart.yaml                # Chart metadata
-├── values.yaml               # Default configuration values
-├── templates/
-│   ├── deployment.yaml       # Deployment template
-│   ├── service.yaml          # Service template (supports dual-stack)
-│   ├── httproute.yaml        # HTTPRoute template for Gateway API
-│   ├── config-pvc.yaml       # PVC template for application-specific storage
-├── _helpers.tpl              # Helper templates
+
+Apply the `HelmRelease` manifest to your cluster:
+
+```bash
+kubectl apply -f app-name-helmrelease.yaml
 ```
 
----
+### 5. Verify Deployment
 
-## **Customization Options**
+Check the resources created by the Helm chart:
 
-### **1. General Settings**
-- `name`: Application name, used in resource naming.
-- `namespace`: Kubernetes namespace for the application.
+```bash
+kubectl get all -n media
+```
 
-### **2. Image Configuration**
-- `image.repository`: Docker repository.
-- `image.tag`: Image tag.
-- `image.pullPolicy`: Pull policy for the container image.
+## Features
 
-### **3. Networking**
-- `host`: Domain for HTTPRoute.
-- `gateway.name`: Gateway name for HTTPRoute.
-- `gateway.namespace`: Namespace for the Gateway and HTTPRoute.
+- **Resource Limits**: Enable or disable CPU and memory requests/limits.
+- **Persistent Volume Claims**: Supports application-specific config PVCs and shared media PVCs.
+- **Networking**: Easily configure Gateway and HTTPRoute for custom hostnames.
+- **Health Probes**: Liveness, Readiness, and Startup probes for monitoring application health.
 
-### **4. PersistentVolumeClaims**
-- `pvc.enabled`: Enable/disable application-specific PVC.
-- `pvc.storageClassName`: Storage class for the PVC (default: `csi-cephfs-sc`).
-- `pvc.mountPath`: Mount path for the application (default: `/config`).
+## Customization
 
-### **5. Shared Media Storage**
-- `sharedMedia.enabled`: Enable/disable shared PVC for media.
-- `sharedMedia.name`: Name of the shared PVC.
-- `sharedMedia.mountPath`: Mount path for the shared PVC.
+1. **Resource Limits**:
+   - Enable resource limits by setting `resources.enabled: true` in `values.yaml`.
 
-### **6. Probes**
-- Define health checks using `probes.liveness`, `probes.readiness`, and `probes.startup`.
+2. **Persistent Volume Claims**:
+   - Application-specific config PVCs are enabled by default.
+   - Shared media PVC can be enabled or disabled via `sharedMedia.enabled`.
 
----
+3. **Networking**:
+   - Customize hostnames and Gateway configurations in `values.yaml`.
+
+4. **Health Probes**:
+   - Configure probes for liveness, readiness, and startup checks.
+
+## Contributing
+
+Contributions are welcome! Feel free to submit issues or pull requests to enhance the chart.
+
+## License
+
+This project is licensed under the MIT License.

@@ -20,20 +20,29 @@ spec:
       containers:
         - name: {{ include "chart-template.fullname" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: {{ .Values.ports.targetPort }}
+          {{- if .Values.resources.enabled }}
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory | default "256Mi" }}
+              cpu: {{ .Values.resources.requests.cpu | default "250m" }}
+            limits:
+              memory: {{ .Values.resources.limits.memory | default "512Mi" }}
+              cpu: {{ .Values.resources.limits.cpu | default "500m" }}
+          {{- end }}
           volumeMounts:
-            {{- if .Values.pvc.enabled }}
+            {{- if .Values.config.enabled }}
             - name: config
-              mountPath: {{ .Values.pvc.mountPath | default "/config" }}
+              mountPath: {{ .Values.config.mountPath | default "/config" }}
             {{- end }}
             {{- if .Values.sharedMedia.enabled }}
             - name: shared-media
-              mountPath: {{ .Values.sharedMedia.mountPath }}
+              mountPath: {{ .Values.sharedMedia.mountPath | default "/media" }}
             {{- end }}
       volumes:
-        {{- if .Values.pvc.enabled }}
+        {{- if .Values.config.enabled }}
         - name: config
           persistentVolumeClaim:
             claimName: {{ .Values.name }}-config-pvc
@@ -41,5 +50,5 @@ spec:
         {{- if .Values.sharedMedia.enabled }}
         - name: shared-media
           persistentVolumeClaim:
-            claimName: {{ .Values.sharedMedia.name }}
+            claimName: shared-media-pvc
         {{- end }}

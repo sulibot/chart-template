@@ -1,5 +1,5 @@
 # General app metadata
-name: app-name              # Application name
+name: app-name              # Application name (used for naming resources and host subdomain)
 namespace: media            # Namespace for the application, PVCs, and services
 
 # Docker container settings
@@ -13,17 +13,24 @@ replicaCount: 1
 
 # Ports
 ports:
-  servicePort: 80
-  targetPort: 8080
+  servicePort: 80           # Port exposed by the service
+  targetPort: 8080          # Container's internal port
 
 # Networking
-host: app-name.sulibot.com   # Default domain for the application
+host:                       # Optional: Defaults to "<name>.sulibot.com" if not set
 gateway:
-  name: public-gateway        # Name of the Gateway
-  namespace: network          # Namespace where the Gateway and HTTPRoute reside
+  name: gateway-external    # Default Gateway name
+  namespace: network        # Namespace where the Gateway and HTTPRoute reside
 
 # Deployment resources
-resources: {}
+resources:
+  enabled: false            # Resource limits and requests are disabled by default
+  requests:
+    memory: "256Mi"         # Default memory request (used only if enabled is true)
+    cpu: "250m"             # Default CPU request (used only if enabled is true)
+  limits:
+    memory: "512Mi"         # Default memory limit (used only if enabled is true)
+    cpu: "500m"             # Default CPU limit (used only if enabled is true)
 
 # Security context settings
 securityContext:
@@ -32,22 +39,20 @@ securityContext:
   fsGroup: 1000
   readOnlyRootFilesystem: true
 
-# PVC configuration for application data
-pvc:
+# Config PVC configuration
+config:
   enabled: true              # PVC is enabled by default
   resources:
     requests:
-      storage: 5Gi           # Requested storage size
-  storageClassName: csi-cephfs-sc  # Default storage class for config PVC
-  mountPath: /config              # Default mount path for config PVC
+      # storage: 5Gi         # Optional: Defaults to 1Gi if not set
+  mountPath: /config         # Default mount path for config PVC
 
 # Shared PVC configuration
 sharedMedia:
   enabled: true              # Shared PVC is enabled by default
-  name: shared-media-pvc     # The name of the shared PVC
-  mountPath: /media          # The path where the PVC will be mounted
+  mountPath: /media          # The path where the shared PVC will be mounted
 
-# Probes
+# Probes for container health checks
 probes:
   liveness:
     enabled: true
