@@ -3,12 +3,16 @@ kind: HTTPRoute
 metadata:
   name: {{ include "chart-template.fullname" . }}-route
   namespace: {{ .Values.gateway.namespace }}
+  labels:
+    {{- include "chart-template.labels" (dict "resourceType" "httproute" "Values" .Values) }}
+  annotations:
+    {{- include "chart-template.annotations" (dict "resourceType" "httproute" "Values" .Values) }}
 spec:
   parentRefs:
-    - name: {{ include "chart-template.gatewayName" . }}
+    - name: {{ .Values.gateway.name | default "gateway-internal" }}
       namespace: {{ .Values.gateway.namespace }}
   hostnames:
-    - {{ include "chart-template.hostname" . }}
+    - {{ printf "%s.%s" .Values.name .Values.gateway.domain | default "sulibot.com" }}
   rules:
     - matches:
         - path:
