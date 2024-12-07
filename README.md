@@ -63,6 +63,21 @@ helm install radarr ./chart-template -f values.yaml
 ```
 
 #### With FluxCD:
+
+Step 1: Create the GitRepository in Flux
+You must define a GitRepository resource to point Flux to your Helm chart source:
+
+Flux install the git repo:
+```
+bash
+Copy code
+flux create source git sulibot \
+  --url=https://github.com/sulibot/chart-template.git \
+  --branch=main \
+  --interval=1m \
+  --export > sulibot-gitrepository.yaml
+```
+
 Create a HelmRelease manifest:
 ```bash
 flux create helmrelease radarr \
