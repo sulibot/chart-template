@@ -34,7 +34,8 @@ labels:
     app.kubernetes.io/component: backend
   deployment:
     custom-deployment-label: true
-
+  pod:
+    custom-pod-label: true
 annotations:
   global:
     description: "Global annotation for all resources"
@@ -43,6 +44,8 @@ annotations:
     prometheus.io/port: "8080"
   deployment:
     description: "Custom annotation for deployment"
+  pod:
+    description: "Custom annotation for pod"
 
 # Deployment resources
 resources:
