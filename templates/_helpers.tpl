@@ -1,9 +1,9 @@
 {{/*
-Generate the full name of the application based on the release name.
+Generate the full name of the application based on the release name and chart name.
 */}}
 {{- define "chart-template.fullname" -}}
 {{- if .Release }}
-{{- .Release.Name | trunc 63 | trimSuffix "-" }}
+{{ .Release.Name | trunc 63 | trimSuffix "-" }}
 {{- else }}
 default-release
 {{- end }}
@@ -14,7 +14,7 @@ Generate the name of the chart based on the chart name.
 */}}
 {{- define "chart-template.name" -}}
 {{- if .Chart }}
-{{- .Chart.Name | default "chart-template" }}
+{{ .Chart.Name | default "chart-template" }}
 {{- else }}
 chart-template
 {{- end }}
@@ -25,11 +25,11 @@ Generate labels for the application based on the values and resource type.
 */}}
 {{- define "chart-template.labels" -}}
 {{- $resourceType := .resourceType | default "component" }}
-app.kubernetes.io/name: "{{ include "chart-template.name" . }}"  # Chart name
-app.kubernetes.io/instance: "{{ include "chart-template.fullname" . }}"  # Release name
-app.kubernetes.io/version: "{{ if .Chart }}{{ default .Chart.AppVersion "0.1.0" }}{{ else }}0.1.0{{ end }}"
-app.kubernetes.io/component: "{{ $resourceType }}"
-app.kubernetes.io/managed-by: "{{ if .Release }}{{ default .Release.Service "Helm" }}{{ else }}Helm{{ end }}"
+app.kubernetes.io/name: {{ include "chart-template.name" . }}
+app.kubernetes.io/instance: {{ include "chart-template.fullname" . }}
+app.kubernetes.io/version: {{ if .Chart }}{{ default .Chart.AppVersion "0.1.0" }}{{ else }}0.1.0{{ end }}
+app.kubernetes.io/component: {{ $resourceType }}
+app.kubernetes.io/managed-by: {{ if .Release }}{{ default .Release.Service "Helm" }}{{ else }}Helm{{ end }}
 {{- end }}
 
 {{/*
