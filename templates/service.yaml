@@ -9,11 +9,11 @@ metadata:
     app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
     app.kubernetes.io/component: "service"
     app.kubernetes.io/managed-by: "Helm"
-    {{- with .Values.labels.global }}{{ toYaml . | nindent 4 }}{{- end }}
-    {{- with .Values.labels.service }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- with (default dict .Values.labels.global) }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- with (default dict .Values.labels.deployment) }}{{ toYaml . | nindent 4 }}{{- end }}
   annotations:
-    {{- with .Values.annotations.global }}{{ toYaml . | nindent 4 }}{{- end }}
-    {{- with .Values.annotations.service }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- with (default dict .Values.annotations.global) }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- with (default dict .Values.annotations.deployment) }}{{ toYaml . | nindent 4 }}{{- end }}
 spec:
   selector:
     app: "{{ include "chart-template.fullname" . }}"
