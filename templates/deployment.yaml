@@ -1,66 +1,54 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "chart-template.fullname" . }}
-  namespace: {{ .Values.namespace }}
+  name: "{{ include "chart-template.fullname" . }}"
+  namespace: "{{ .Values.namespace }}"
   labels:
-    {{- include "chart-template.labels" (dict "resourceType" "deployment" "Values" .Values) | nindent 4 }}
+    app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
+    app.kubernetes.io/component: "deployment"
+    app.kubernetes.io/managed-by: "Helm"
   annotations:
-    {{- include "chart-template.annotations" (dict "resourceType" "deployment" "Values" .Values) | nindent 4 }}
+    description: "Annotations for deployment"
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ include "chart-template.fullname" . }}
+      app: "{{ include "chart-template.fullname" . }}"
   template:
     metadata:
       labels:
-        {{- include "chart-template.labels" (dict "resourceType" "deployment" "Values" .Values) | nindent 8 }}
+        app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
+        app.kubernetes.io/instance: "{{ .Release.Name }}"
+        app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
+        app.kubernetes.io/component: "deployment"
+        app.kubernetes.io/managed-by: "Helm"
       annotations:
-        {{- include "chart-template.annotations" (dict "resourceType" "deployment" "Values" .Values) | nindent 8 }}
+        description: "Annotations for deployment"
     spec:
-      {{- if .Values.securityContext.enabled }}
       securityContext:
         runAsUser: {{ .Values.securityContext.runAsUser }}
         runAsGroup: {{ .Values.securityContext.runAsGroup }}
         fsGroup: {{ .Values.securityContext.fsGroup }}
-      {{- end }}
       containers:
-        - name: {{ include "chart-template.fullname" . }}
+        - name: "{{ include "chart-template.fullname" . }}"
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: {{ .Values.ports.targetPort }}
           env:
             - name: TZ
-              value: "{{ .Values.timezone | default "America/Los_Angeles" }}"
-          {{- if .Values.securityContext.enabled }}
-          securityContext:
-            readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
-            allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
-          {{- end }}
-          resources:
-            {{- if .Values.resources.enabled }}
-            requests:
-              memory: "{{ .Values.resources.requests.memory }}"
-              cpu: "{{ .Values.resources.requests.cpu }}"
-            limits:
-              memory: "{{ .Values.resources.limits.memory }}"
-              cpu: "{{ .Values.resources.limits.cpu }}"
-            {{- end }}
+              value: "{{ .Values.timezone }}"
           volumeMounts:
             - name: config
-              mountPath: {{ .Values.config.mountPath | default "/config" }}
-            {{- if .Values.sharedMedia.enabled }}
+              mountPath: /config
             - name: shared-media
-              mountPath: {{ .Values.sharedMedia.mountPath | default "/media" }}
-            {{- end }}
+              mountPath: /media
       volumes:
         - name: config
           persistentVolumeClaim:
-            claimName: {{ include "chart-template.fullname" . }}-config-pvc
-        {{- if .Values.sharedMedia.enabled }}
+            claimName: "{{ include "chart-template.fullname" . }}-config-pvc"
         - name: shared-media
           persistentVolumeClaim:
-            claimName: shared-media-pvc
-        {{- end }}
+            claimName: "shared-media-pvc"
