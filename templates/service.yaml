@@ -9,12 +9,8 @@ metadata:
     app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
     app.kubernetes.io/component: "service"
     app.kubernetes.io/managed-by: "Helm"
-    {{- with .Values.labels.global }}
-{{ toYaml . | nindent 4 }}
-    {{- end }}
-    {{- with .Values.labels.service }}
-{{ toYaml . | nindent 4 }}
-    {{- end }}
+    {{- with .Values.labels.global }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- with .Values.labels.service }}{{ toYaml . | nindent 4 }}{{- end }}
   annotations:
     {{- with .Values.annotations.global }}
 {{ toYaml . | nindent 4 }}
