@@ -17,11 +17,11 @@ Generate labels for the application based on the values and resource type.
 */}}
 {{- define "chart-template.labels" -}}
 {{- $resourceType := .resourceType | default "component" -}}
-app.kubernetes.io/name: {{ .Release.Name | default "default-release" }}  # Use the release name as the app name
-app.kubernetes.io/instance: {{ .Release.Name | default "default-release" }}  # Use the release name for instance
-app.kubernetes.io/version: {{ .Chart.AppVersion | default "0.1.0" }}
+app.kubernetes.io/name: {{ if .Release }}{{ .Release.Name | default "default-release" }}{{ else }}default-release{{ end }}
+app.kubernetes.io/instance: {{ if .Release }}{{ .Release.Name | default "default-release" }}{{ else }}default-release{{ end }}
+app.kubernetes.io/version: {{ if .Chart }}{{ .Chart.AppVersion | default "0.1.0" }}{{ else }}0.1.0{{ end }}
 app.kubernetes.io/component: {{ $resourceType }}
-app.kubernetes.io/managed-by: {{ .Release.Service | default "Helm" }}
+app.kubernetes.io/managed-by: {{ if .Release }}{{ .Release.Service | default "Helm" }}{{ else }}Helm{{ end }}
 {{- end }}
 
 {{/*
