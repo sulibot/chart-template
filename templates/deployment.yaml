@@ -33,13 +33,22 @@ spec:
         fsGroup: {{ .Values.securityContext.fsGroup }}
       containers:
         - name: "{{ include "chart-template.fullname" . }}"
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}@{{ .Values.image.digest | default (printf "%s:%s" .Values.image.repository .Values.image.tag) }}"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: {{ .Values.ports.targetPort }}
           env:
             - name: TZ
               value: "{{ .Values.timezone }}"
+          resources:
+            {{- if .Values.resources.enabled }}
+            limits:
+              memory: "{{ .Values.resources.limits.memory }}"
+              cpu: "{{ .Values.resources.limits.cpu }}"
+            requests:
+              memory: "{{ .Values.resources.requests.memory }}"
+              cpu: "{{ .Values.resources.requests.cpu }}"
+            {{- end }}
           volumeMounts:
             - name: config
               mountPath: /config
