@@ -4,9 +4,13 @@ metadata:
   name: {{ include "chart-template.fullname" . }}
   namespace: {{ .Values.namespace }}
   labels:
-    {{- include "chart-template.labels" (dict "resourceType" "deployment" "Values" .Values) | nindent 4 }}
+    app.kubernetes.io/name: {{ include "chart-template.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    app.kubernetes.io/component: deployment
+    app.kubernetes.io/managed-by: Helm
   annotations:
-    {{- include "chart-template.annotations" (dict "resourceType" "deployment" "Values" .Values) | nindent 4 }}
+    description: "Annotations for deployment"
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -15,16 +19,18 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "chart-template.labels" (dict "resourceType" "deployment" "Values" .Values) | nindent 8 }}
+        app.kubernetes.io/name: {{ include "chart-template.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/version: {{ .Chart.AppVersion }}
+        app.kubernetes.io/component: deployment
+        app.kubernetes.io/managed-by: Helm
       annotations:
-        {{- include "chart-template.annotations" (dict "resourceType" "deployment" "Values" .Values) | nindent 8 }}
+        description: "Annotations for deployment"
     spec:
-      {{- if .Values.securityContext.enabled }}
       securityContext:
-        runAsUser: {{ .Values.securityContext.runAsUser }}
-        runAsGroup: {{ .Values.securityContext.runAsGroup }}
-        fsGroup: {{ .Values.securityContext.fsGroup }}
-      {{- end }}
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       containers:
         - name: {{ include "chart-template.fullname" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -33,25 +39,19 @@ spec:
             - containerPort: {{ .Values.ports.targetPort }}
           env:
             - name: TZ
-              value: "{{ .Values.timezone | default "America/Los_Angeles" }}"
-          {{- if .Values.securityContext.enabled }}
+              value: "{{ .Values.timezone }}"
           securityContext:
-            readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
-            allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
-          {{- end }}
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
           volumeMounts:
             - name: config
-              mountPath: {{ .Values.config.mountPath | default "/config" }}
-            {{- if .Values.sharedMedia.enabled }}
+              mountPath: /config
             - name: shared-media
-              mountPath: {{ .Values.sharedMedia.mountPath | default "/media" }}
-            {{- end }}
+              mountPath: /media
       volumes:
         - name: config
           persistentVolumeClaim:
             claimName: {{ include "chart-template.fullname" . }}-config-pvc
-        {{- if .Values.sharedMedia.enabled }}
         - name: shared-media
           persistentVolumeClaim:
             claimName: shared-media-pvc
-        {{- end }}

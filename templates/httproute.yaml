@@ -4,15 +4,19 @@ metadata:
   name: {{ include "chart-template.fullname" . }}-route
   namespace: {{ .Values.gateway.namespace }}
   labels:
-    {{- include "chart-template.labels" (dict "resourceType" "httproute" "Values" .Values) | nindent 4 }}
+    app.kubernetes.io/name: {{ include "chart-template.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    app.kubernetes.io/component: httproute
+    app.kubernetes.io/managed-by: Helm
   annotations:
-    {{- include "chart-template.annotations" (dict "resourceType" "httproute" "Values" .Values) | nindent 4 }}
+    description: "Annotations for httproute"
 spec:
   parentRefs:
-    - name: {{ .Values.gateway.name | default "gateway-internal" }}
+    - name: {{ .Values.gateway.name }}
       namespace: {{ .Values.gateway.namespace }}
   hostnames:
-    - {{ printf "%s.%s" .Values.name .Values.gateway.domain | default "sulibot.com" }}
+    - {{ printf "%s.%s" .Values.name .Values.gateway.domain }}
   rules:
     - matches:
         - path:

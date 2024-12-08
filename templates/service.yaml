@@ -4,9 +4,13 @@ metadata:
   name: {{ include "chart-template.fullname" . }}-service
   namespace: {{ .Values.namespace }}
   labels:
-    {{- include "chart-template.labels" (dict "resourceType" "service" "Values" .Values) | nindent 4 }}
+    app.kubernetes.io/name: {{ include "chart-template.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    app.kubernetes.io/component: service
+    app.kubernetes.io/managed-by: Helm
   annotations:
-    {{- include "chart-template.annotations" (dict "resourceType" "service" "Values" .Values) | nindent 4 }}
+    description: "Annotations for service"
 spec:
   selector:
     app: {{ include "chart-template.fullname" . }}
@@ -14,7 +18,7 @@ spec:
     - name: http
       protocol: TCP
       port: 80
-      targetPort: 8080
+      targetPort: {{ .Values.ports.targetPort }}
   ipFamilies:
     - IPv4
     - IPv6
