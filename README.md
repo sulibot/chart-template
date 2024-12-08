@@ -3,6 +3,18 @@
 
 A Helm chart template designed for deploying containerized applications with flexibility and reusability. This chart supports optional resource limits, persistent volume claims (PVCs), networking configurations, and health probes.
 
+---
+
+## Features
+
+- **Resource Limits**: Enable or disable CPU and memory requests/limits.
+- **Persistent Volume Claims**: Supports application-specific config PVCs and shared media PVCs.
+- **Networking**: Easily configure Gateway and HTTPRoute for custom hostnames.
+- **Health Probes**: Liveness, Readiness, and Startup probes for monitoring application health.
+- **Annotations and Labels**: Fully customizable metadata for all resources.
+
+---
+
 ## Usage
 
 This repository provides a reusable Helm chart template that can be used to deploy applications on Kubernetes. Below are the steps to deploy an application using this chart.
@@ -24,7 +36,7 @@ To install the chart from a Helm repository:
 
 2. Install the chart:
     ```bash
-    helm install app-name chart-template/chart-template       --namespace media       -f values.yaml
+    helm install app-name chart-template/chart-template --namespace media -f values.yaml
     ```
 
 #### Option 2: Use the Chart Locally
@@ -38,7 +50,7 @@ If you have cloned the chart repository locally:
 
 2. Install the chart:
     ```bash
-    helm install app-name ./chart-template       --namespace media       -f values.yaml
+    helm install app-name ./chart-template --namespace media -f values.yaml
     ```
 
 ---
@@ -48,10 +60,8 @@ If you have cloned the chart repository locally:
 To export Kubernetes manifests from Helm without applying them:
 
 ```bash
-helm template app-name ./chart-template   --namespace media   -f values.yaml > app-name-helm-manifests.yaml
+helm template app-name ./chart-template --namespace media -f values.yaml > app-name-helm-manifests.yaml
 ```
-
-The resulting `app-name-helm-manifests.yaml` file contains the Kubernetes resources for the chart.
 
 ---
 
@@ -78,18 +88,12 @@ The resulting `app-name-helm-manifests.yaml` file contains the Kubernetes resour
 
 ## Flux How-To
 
-### Assumptions
-- Flux is installed and functional in your cluster.
-- Your repository is already managed by Flux.
-
----
-
 ### 1. Create a Source for Helm
 
 To create a Helm source pointing to the chart repository:
 
 ```bash
-flux create source helm chart-template   --url=https://github.com/sulibot/chart-template   --interval=1h   --export > chart-template-source.yaml
+flux create source helm chart-template --url=https://github.com/sulibot/chart-template --interval=1h --export > chart-template-source.yaml
 ```
 
 Apply the Helm source to the cluster:
@@ -111,7 +115,7 @@ flux get sources helm
 Use the `flux` CLI to create a HelmRelease resource for the chart:
 
 ```bash
-flux create helmrelease app-name   --source HelmRepository/chart-template   --chart chart-template   --values values.yaml   --chart-version 0.1.0   --interval 1h   --export > app-name-helmrelease.yaml
+flux create helmrelease app-name --source HelmRepository/chart-template --chart chart-template --values values.yaml --chart-version 0.1.0 --interval 1h --export > app-name-helmrelease.yaml
 ```
 
 Apply the HelmRelease to the cluster:
@@ -128,71 +132,82 @@ flux get helmreleases -A
 
 ---
 
-### 3. Export Flux Manifests
-
-To export all manifests for the HelmRelease and Helm source:
-
-1. Export Helm source:
-    ```bash
-    flux create source helm chart-template       --url=https://github.com/sulibot/chart-template       --interval=1h       --export > chart-template-source.yaml
-    ```
-
-2. Export HelmRelease:
-    ```bash
-    flux create helmrelease app-name       --source HelmRepository/chart-template       --chart chart-template       --values values.yaml       --chart-version 0.1.0       --interval 1h       --export > app-name-helmrelease.yaml
-    ```
-
-These files can be committed to your GitOps repository.
-
----
-
-### 4. Troubleshooting Flux
-
-- **Check HelmRelease Status**:
-    ```bash
-    flux get helmreleases -A
-    ```
-
-- **Check Source Status**:
-    ```bash
-    flux get sources helm -A
-    ```
-
-- **View Logs**:
-    ```bash
-    kubectl logs -n flux-system deployment/helm-controller
-    ```
-
-- **Reconcile Resources**:
-    ```bash
-    flux reconcile helmrelease app-name
-    flux reconcile source helm chart-template
-    ```
-
----
-
-## Features
-
-- **Resource Limits**: Enable or disable CPU and memory requests/limits.
-- **Persistent Volume Claims**: Supports application-specific config PVCs and shared media PVCs.
-- **Networking**: Easily configure Gateway and HTTPRoute for custom hostnames.
-- **Health Probes**: Liveness, Readiness, and Startup probes for monitoring application health.
-
----
-
 ## Customization
 
-1. **Resource Limits**:
+### 1. **Resource Limits**
    - Enable resource limits by setting `resources.enabled: true` in `values.yaml`.
 
-2. **Persistent Volume Claims**:
+### 2. **Persistent Volume Claims**
    - Application-specific config PVCs are enabled by default.
    - Shared media PVC can be enabled or disabled via `sharedMedia.enabled`.
 
-3. **Networking**:
+### 3. **Networking**
    - Customize hostnames and Gateway configurations in `values.yaml`.
 
-4. **Health Probes**:
-   - Configure probes for liveness, readiness, and startup checks.
+### 4. **Annotations and Labels**
+
+**Annotations** and **Labels** allow you to customize metadata for the generated Kubernetes resources. These settings can be applied globally or to specific resource types, including services, deployments, and pods.
+
+#### **Configuration in `values.yaml`**
+You can specify custom annotations and labels in the `values.yaml` file under the `annotations` and `labels` sections.
+
+```yaml
+labels:
+  global:
+    app.kubernetes.io/part-of: my-app-group
+    app.kubernetes.io/managed-by: Helm
+  service:
+    app.kubernetes.io/component: backend
+  deployment:
+    custom-deployment-label: true
+  pod:
+    custom-pod-label: true
+
+annotations:
+  global:
+    description: "Global annotation for all resources"
+  service:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+  deployment:
+    description: "Custom annotation for deployment"
+  pod:
+    description: "Custom annotation for pod"
+```
+
+#### **Behavior**
+- **Global Labels and Annotations**:
+  - Applied to all Kubernetes resources generated by the chart.
+
+- **Resource-Specific Labels and Annotations**:
+  - Service-specific, deployment-specific, and pod-specific options override global values for their respective resource types.
+
+#### **Example Usage**
+If you enable the configuration above:
+- **Service Metadata**:
+  - The chart will include `prometheus.io/scrape: "true"` and `prometheus.io/port: "8080"` annotations in the `Service` definition.
+- **Pod Metadata**:
+  - The `Pod` will include the `custom-pod-label: true` label and `description: Custom annotation for pod` annotation.
 
 ---
+
+## Container Configuration
+
+The container can be configured with the following options in the `values.yaml` file:
+
+```yaml
+image:
+  repository: my-container-repo  # The container repository
+  tag: latest                    # Optional: Specify a tag for the image
+  digest: ""                     # Optional: Specify a digest for the image (e.g., sha256:...)
+timezone: "America/Los_Angeles"  # Default timezone for the application
+```
+
+The `image.digest` takes precedence over the `image.tag` if both are provided.
+
+---
+
+### **Health Probes**
+You can define liveness, readiness, and startup probes for your application by customizing the chart’s values.
+
+--- 
