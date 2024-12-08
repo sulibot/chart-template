@@ -1,38 +1,38 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "chart-template.fullname" . }}
-  namespace: {{ .Values.namespace }}
+  name: "{{ include "chart-template.fullname" . }}"
+  namespace: "{{ .Values.namespace }}"
   labels:
-    app.kubernetes.io/name: {{ include "chart-template.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion }}
-    app.kubernetes.io/component: deployment
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
+    app.kubernetes.io/component: "deployment"
+    app.kubernetes.io/managed-by: "Helm"
   annotations:
     description: "Annotations for deployment"
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ include "chart-template.fullname" . }}
+      app: "{{ include "chart-template.fullname" . }}"
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "chart-template.name" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-        app.kubernetes.io/version: {{ .Chart.AppVersion }}
-        app.kubernetes.io/component: deployment
-        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
+        app.kubernetes.io/instance: "{{ .Release.Name }}"
+        app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
+        app.kubernetes.io/component: "deployment"
+        app.kubernetes.io/managed-by: "Helm"
       annotations:
         description: "Annotations for deployment"
     spec:
       securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+        runAsGroup: {{ .Values.securityContext.runAsGroup }}
+        fsGroup: {{ .Values.securityContext.fsGroup }}
       containers:
-        - name: {{ include "chart-template.fullname" . }}
+        - name: "{{ include "chart-template.fullname" . }}"
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: IfNotPresent
           ports:
@@ -40,9 +40,6 @@ spec:
           env:
             - name: TZ
               value: "{{ .Values.timezone }}"
-          securityContext:
-            readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: false
           volumeMounts:
             - name: config
               mountPath: /config
@@ -51,7 +48,7 @@ spec:
       volumes:
         - name: config
           persistentVolumeClaim:
-            claimName: {{ include "chart-template.fullname" . }}-config-pvc
+            claimName: "{{ include "chart-template.fullname" . }}-config-pvc"
         - name: shared-media
           persistentVolumeClaim:
-            claimName: shared-media-pvc
+            claimName: "shared-media-pvc"
