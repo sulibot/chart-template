@@ -16,7 +16,7 @@ spec:
     - name: {{ .Values.gateway.name }}
       namespace: {{ .Values.gateway.namespace }}
   hostnames:
-    - {{ printf "%s.%s" .Values.name .Values.gateway.domain }}
+    - {{ printf "%s.%s" (default "default-name" .Values.name) (default "example.com" .Values.gateway.domain) }}
   rules:
     - matches:
         - path:
