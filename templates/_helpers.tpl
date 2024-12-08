@@ -1,13 +1,4 @@
 {{/*
-Ensure either a tag or a digest is provided for the image.
-*/}}
-{{- define "chart-template.validate-image" -}}
-{{- if and (empty .Values.image.tag) (empty .Values.image.digest) -}}
-  {{ fail "Both 'tag' and 'digest' are empty. Specify at least one in values.yaml" }}
-{{- end }}
-{{- end }}
-
-{{/*
 Generate the full name of the application based on the release name and chart name.
 */}}
 {{- define "chart-template.fullname" -}}
@@ -18,7 +9,7 @@ Generate the full name of the application based on the release name and chart na
 Generate the name of the chart based on the chart name only.
 */}}
 {{- define "chart-template.name" -}}
-{{ if .Chart }}{{ default "unknown-chart" .Chart.Name }}{{ else }}unknown-chart{{ end }}
+{{ .Chart.Name | default "chart-template" }}
 {{- end }}
 
 {{/*
@@ -26,11 +17,11 @@ Generate labels for the application based on the values and resource type.
 */}}
 {{- define "chart-template.labels" -}}
 {{- $resourceType := .resourceType | default "component" -}}
-app.kubernetes.io/name: {{ if .Chart }}{{ default "unknown-chart" .Chart.Name }}{{ else }}unknown-chart{{ end }}
-app.kubernetes.io/instance: {{ if .Release }}{{ default "default-instance" .Release.Name }}{{ else }}default-instance{{ end }}
-app.kubernetes.io/version: {{ if .Chart }}{{ default "0.1.0" .Chart.AppVersion }}{{ else }}0.1.0{{ end }}
+app.kubernetes.io/name: {{ include "chart-template.name" . }}  # Chart name
+app.kubernetes.io/instance: {{ include "chart-template.fullname" . }}  # Release name
+app.kubernetes.io/version: {{ .Chart.AppVersion | default "0.1.0" }}
 app.kubernetes.io/component: {{ $resourceType }}
-app.kubernetes.io/managed-by: {{ if .Release }}{{ default "Helm" .Release.Service }}{{ else }}Helm{{ end }}
+app.kubernetes.io/managed-by: {{ .Release.Service | default "Helm" }}
 {{- end }}
 
 {{/*
