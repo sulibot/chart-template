@@ -5,7 +5,8 @@ namespace: media            # Namespace for the application, PVCs, and services
 # Docker container settings
 image:
   repository: my-container-repo
-  tag: latest
+  tag: latest               # Optional: Specify a tag for the image
+  digest: ""                # Optional: Specify a digest for the image (e.g., sha256:...)
 
 # Timezone
 timezone: "America/Los_Angeles"  # Default timezone for the application
@@ -47,11 +48,11 @@ annotations:
 resources:
   enabled: false            # Resource limits and requests are disabled by default
   requests:
-    memory: "256Mi"
-    cpu: "250m"
+    memory: "256Mi"         # Minimum memory requested
+    cpu: "250m"             # Minimum CPU requested
   limits:
-    memory: "512Mi"
-    cpu: "500m"
+    memory: "512Mi"         # Maximum memory allowed
+    cpu: "500m"             # Maximum CPU allowed
 
 # Security Context
 securityContext:
@@ -71,33 +72,3 @@ config:
 sharedMedia:
   enabled: true              # Shared PVC is enabled by default
   mountPath: /media          # The path where the shared PVC will be mounted
-
-# Probes for container health checks
-probes:
-  liveness:
-    enabled: true
-    path: /healthz
-    port: 8080
-    initialDelaySeconds: 10
-    periodSeconds: 10
-    timeoutSeconds: 1
-    failureThreshold: 3
-    successThreshold: 1
-  readiness:
-    enabled: true
-    path: /ready
-    port: 8080
-    initialDelaySeconds: 5
-    periodSeconds: 10
-    timeoutSeconds: 1
-    failureThreshold: 3
-    successThreshold: 1
-  startup:
-    enabled: false
-    path: /startup
-    port: 8080
-    initialDelaySeconds: 0
-    periodSeconds: 10
-    timeoutSeconds: 1
-    failureThreshold: 30
-    successThreshold: 1
