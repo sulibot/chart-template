@@ -12,12 +12,8 @@ metadata:
     {{- with .Values.labels.global }}{{ toYaml . | nindent 4 }}{{- end }}
     {{- with .Values.labels.service }}{{ toYaml . | nindent 4 }}{{- end }}
   annotations:
-    {{- with .Values.annotations.global }}
-{{ toYaml . | nindent 4 }}
-    {{- end }}
-    {{- with .Values.annotations.service }}
-{{ toYaml . | nindent 4 }}
-    {{- end }}
+    {{- with .Values.annotations.global }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- with .Values.annotations.service }}{{ toYaml . | nindent 4 }}{{- end }}
 spec:
   selector:
     app: "{{ include "chart-template.fullname" . }}"

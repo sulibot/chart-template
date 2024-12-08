@@ -9,7 +9,11 @@ metadata:
     app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
     app.kubernetes.io/component: "deployment"
     app.kubernetes.io/managed-by: "Helm"
+    {{- with .Values.labels.global }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- with .Values.labels.deployment }}{{ toYaml . | nindent 4 }}{{- end }}
   annotations:
+    {{- with .Values.annotations.global }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- with .Values.annotations.deployment }}{{ toYaml . | nindent 4 }}{{- end }}
     description: "Annotations for deployment"
 spec:
   replicas: {{ .Values.replicaCount }}
@@ -24,7 +28,11 @@ spec:
         app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
         app.kubernetes.io/component: "deployment"
         app.kubernetes.io/managed-by: "Helm"
-      annotations:
+    {{- with .Values.labels.global }}{{ toYaml . | nindent 8 }}{{- end }}
+    {{- with .Values.labels.pod }}{{ toYaml . | nindent 8 }}{{- end }}
+  annotations:
+    {{- with .Values.annotations.global }}{{ toYaml . | nindent 8 }}{{- end }}
+    {{- with .Values.annotations.pod }}{{ toYaml . | nindent 8 }}{{- end }}
         description: "Annotations for deployment"
     spec:
       securityContext:
