@@ -21,4 +21,4 @@ spec:
       backendRefs:
         - name: {{ include "chart-template.fullname" . }}-service
           namespace: {{ .Values.namespace }}
-          port: {{ .Values.ports.servicePort }}
+          port: 80
