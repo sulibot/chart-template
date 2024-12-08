@@ -9,12 +9,11 @@ metadata:
     app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
     app.kubernetes.io/component: "deployment"
     app.kubernetes.io/managed-by: "Helm"
-    {{- with .Values.labels.global }}{{ toYaml . | nindent 4 }}{{- end }}
-    {{- with .Values.labels.deployment }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- with (default dict .Values.labels.global) }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- with (default dict .Values.labels.deployment) }}{{ toYaml . | nindent 4 }}{{- end }}
   annotations:
-    {{- with .Values.annotations.global }}{{ toYaml . | nindent 4 }}{{- end }}
-    {{- with .Values.annotations.deployment }}{{ toYaml . | nindent 4 }}{{- end }}
-    description: "Annotations for deployment"
+    {{- with (default dict .Values.annotations.global) }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- with (default dict .Values.annotations.deployment) }}{{ toYaml . | nindent 4 }}{{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -28,12 +27,11 @@ spec:
         app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
         app.kubernetes.io/component: "deployment"
         app.kubernetes.io/managed-by: "Helm"
-        {{- with .Values.labels.global }}{{ toYaml . | nindent 8 }}{{- end }}
-        {{- with .Values.labels.pod }}{{ toYaml . | nindent 8 }}{{- end }}
+        {{- with (default dict .Values.labels.global) }}{{ toYaml . | nindent 8 }}{{- end }}
+        {{- with (default dict .Values.labels.pod) }}{{ toYaml . | nindent 8 }}{{- end }}
       annotations:
-        {{- with .Values.annotations.global }}{{ toYaml . | nindent 8 }}{{- end }}
-        {{- with .Values.annotations.pod }}{{ toYaml . | nindent 8 }}{{- end }}
-        description: "Annotations for deployment"
+        {{- with (default dict .Values.annotations.global) }}{{ toYaml . | nindent 8 }}{{- end }}
+        {{- with (default dict .Values.annotations.pod) }}{{ toYaml . | nindent 8 }}{{- end }}
     spec:
       securityContext:
         runAsUser: {{ .Values.securityContext.runAsUser }}
