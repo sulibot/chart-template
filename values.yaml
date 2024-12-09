@@ -29,16 +29,12 @@ gateway:
 labels:
   global:
     description: "Global labels for all resources"
-    app.kubernetes.io/part-of: my-app-group
   service:
     description: "Custom labels for service"
-    app.kubernetes.io/component: backend
   deployment:
     description: "Custom labels for deployment"
-    custom-deployment-label: true
   pod:
     description: "Custom labels for pod"
-    custom-pod-label: true
 annotations:
   global:
     description: "Global annotation for all resources"
