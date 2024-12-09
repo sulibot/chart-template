@@ -47,6 +47,9 @@ spec:
           env:
             - name: TZ
               value: "{{ .Values.timezone }}"
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           resources:
             {{- if .Values.resources.enabled }}
             limits:
