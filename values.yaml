@@ -12,10 +12,10 @@ image:
 timezone: "America/Los_Angeles"  # Default timezone for the application
 
 env:
-  - name: PUID
-    value: "1000"
-  - name: PGID
-    value: "1000"
+#  - name: PUID
+#    value: "911"
+#  - name: PGID
+#    value: "911"
 
 # Replicas
 replicaCount: 1
@@ -79,3 +79,21 @@ config:
 sharedMedia:
   enabled: true              # Shared PVC is enabled by default
   mountPath: /media          # The path where the shared PVC will be mounted
+
+initContainer:
+  enabled: false                     # Enable or disable the init container
+  name: setup-container              # Name of the init container
+  image: busybox                     # Docker image to use
+  command:                           # Command to run in the init container
+    - /bin/sh
+    - -c
+  args:                              # Arguments for the command
+    - "echo Setting up environment"
+  env:                               # Environment variables for the init container
+    - name: SAMPLE_ENV
+      value: "init-container-value"
+  volumeMounts:                      # Volume mounts for the init container
+    - name: config
+      mountPath: /config
+    - name: shared-media
+      mountPath: /media
