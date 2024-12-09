@@ -9,17 +9,24 @@ metadata:
     app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
     app.kubernetes.io/component: "statefulset"
     app.kubernetes.io/managed-by: "Helm"
-    {{- with (default dict .Values.labels.global) }}{{ toYaml . | nindent 4 }}{{- end }}
-    {{- with (default dict .Values.labels.statefulset) }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- with (default dict .Values.labels.global) }}
+    {{ toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with (default dict .Values.labels.statefulset) }}
+    {{ toYaml . | nindent 4 }}
+    {{- end }}
   annotations:
-    {{- with (default dict .Values.annotations.global) }}{{ toYaml . | nindent 4 }}{{- end }}
-    {{- with (default dict .Values.annotations.statefulset) }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- with (default dict .Values.annotations.global) }}
+    {{ toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with (default dict .Values.annotations.statefulset) }}
+    {{ toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: "{{ include "chart-template.fullname" . }}"
-  serviceName: "{{ include "chart-template.fullname" . }}-headless"
   template:
     metadata:
       labels:
@@ -29,11 +36,19 @@ spec:
         app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
         app.kubernetes.io/component: "statefulset"
         app.kubernetes.io/managed-by: "Helm"
-        {{- with (default dict .Values.labels.global) }}{{ toYaml . | nindent 8 }}{{- end }}
-        {{- with (default dict .Values.labels.pod) }}{{ toYaml . | nindent 8 }}{{- end }}
+        {{- with (default dict .Values.labels.global) }}
+        {{ toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with (default dict .Values.labels.pod) }}
+        {{ toYaml . | nindent 8 }}
+        {{- end }}
       annotations:
-        {{- with (default dict .Values.annotations.global) }}{{ toYaml . | nindent 8 }}{{- end }}
-        {{- with (default dict .Values.annotations.pod) }}{{ toYaml . | nindent 8 }}{{- end }}
+        {{- with (default dict .Values.annotations.global) }}
+        {{ toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with (default dict .Values.annotations.pod) }}
+        {{ toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       containers:
         - name: "{{ include "chart-template.fullname" . }}"
@@ -45,7 +60,7 @@ spec:
             - name: TZ
               value: "{{ .Values.timezone }}"
             {{- with .Values.env }}
-            {{- toYaml . | nindent 12 }}
+            {{ toYaml . | nindent 12 }}
             {{- end }}
           {{- if .Values.securityContext.enabled }}
           securityContext:
@@ -61,10 +76,27 @@ spec:
             - name: sharedMedia
               mountPath: "{{ .Values.sharedMedia.mountPath }}"
             {{- end }}
-      tolerations: {{ toYaml .Values.tolerations | nindent 6 }}
-      affinity: {{ toYaml .Values.affinity | nindent 6 }}
+      volumes:
+        {{- if .Values.config.enabled }}
+        - name: config
+          persistentVolumeClaim:
+            claimName: "{{ include "chart-template.fullname" . }}-config-pvc"
+        {{- end }}
+        {{- if .Values.sharedMedia.enabled }}
+        - name: sharedMedia
+          persistentVolumeClaim:
+            claimName: "shared-media-pvc"  # Reference to existing PVC
+        {{- end }}
+      tolerations:
+        {{- if .Values.tolerations }}
+        {{ toYaml .Values.tolerations | nindent 6 }}
+        {{- end }}
+      affinity:
+        {{- if .Values.affinity }}
+        {{ toYaml .Values.affinity | nindent 6 }}
+        {{- end }}
+  {{- if .Values.config.enabled }}
   volumeClaimTemplates:
-    {{- if .Values.config.enabled }}
     - metadata:
         name: config
         labels:
@@ -76,17 +108,4 @@ spec:
           requests:
             storage: "{{ .Values.config.storageSize | default "1Gi" }}"
         storageClassName: "csi-cephfs-sc"
-    {{- end }}
-    {{- if .Values.sharedMedia.enabled }}
-    - metadata:
-        name: sharedMedia
-        labels:
-          app: "{{ include "chart-template.fullname" . }}"
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: "{{ .Values.sharedMedia.storageSize | default "5Gi" }}"
-        storageClassName: "csi-cephfs-sc"
-    {{- end }}
+  {{- end }}
