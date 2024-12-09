@@ -39,8 +39,6 @@ spec:
         runAsUser: {{ .Values.securityContext.runAsUser }}
         runAsGroup: {{ .Values.securityContext.runAsGroup }}
         fsGroup: {{ .Values.securityContext.fsGroup }}
-        readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
-        allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
       {{- end }}
       containers:
         - name: "{{ include "chart-template.fullname" . }}"
@@ -53,6 +51,11 @@ spec:
               value: "{{ .Values.timezone }}"
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- if .Values.securityContext.enabled }}
+            securityContext:
+              readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
+              allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
             {{- end }}
           resources:
             {{- if .Values.resources.enabled }}
