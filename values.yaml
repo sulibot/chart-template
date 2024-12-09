@@ -71,7 +71,7 @@ config:
   mountPath: /config            # Default mount path for config PVC
 
 # Shared PVC configuration
-shared-media:
+sharedMedia:
   enabled: true                 # Shared PVC is enabled by default
   mountPath: /media             # Mount path for shared PVC
 
@@ -91,7 +91,7 @@ initContainer:
   volumeMounts:                 # Volume mounts for the init container
     - name: config
       mountPath: /config
-    - name: shared-media
+    - name: sharedMedia
       mountPath: /media
 
 
