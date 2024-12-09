@@ -22,6 +22,7 @@ spec:
   template:
     metadata:
       labels:
+        app: "{{ include "chart-template.fullname" . }}"
         app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
         app.kubernetes.io/instance: "{{ .Release.Name }}"
         app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
