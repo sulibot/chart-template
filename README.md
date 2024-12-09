@@ -154,10 +154,7 @@ You can specify custom annotations and labels in the `values.yaml` file under th
 ```yaml
 labels:
   global:
-    app.kubernetes.io/part-of: my-app-group
-    app.kubernetes.io/managed-by: Helm
   service:
-    app.kubernetes.io/component: backend
   deployment:
     custom-deployment-label: true
   pod:
@@ -167,8 +164,7 @@ annotations:
   global:
     description: "Global annotation for all resources"
   service:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8080"
+    description: "Custom annotation for service"
   deployment:
     description: "Custom annotation for deployment"
   pod:

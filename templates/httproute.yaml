@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/version: {{ .Chart.AppVersion }}
     app.kubernetes.io/component: httproute
-    app.kubernetes.io/managed-by: Helm
+
   annotations:
     description: "Annotations for httproute"
 spec:

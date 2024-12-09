@@ -30,7 +30,6 @@ labels:
   global:
     description: "Global labels for all resources"
     app.kubernetes.io/part-of: my-app-group
-    app.kubernetes.io/managed-by: Helm
   service:
     description: "Custom labels for service"
     app.kubernetes.io/component: backend
