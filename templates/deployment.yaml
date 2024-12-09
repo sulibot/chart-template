@@ -52,11 +52,11 @@ spec:
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-            {{- if .Values.securityContext.enabled }}
-            securityContext:
-              readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
-              allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
-            {{- end }}
+          {{- if .Values.securityContext.enabled }}
+          securityContext:
+            readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
+            allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
+          {{- end }}
           resources:
             {{- if .Values.resources.enabled }}
             limits:
