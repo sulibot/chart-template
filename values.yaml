@@ -34,22 +34,14 @@ gateway:
 # Labels and Annotations
 labels:
   global:
-    description: "Global labels for all resources"
   service:
-    description: "Custom labels for service"
   deployment:
-    description: "Custom labels for deployment"
   pod:
-    description: "Custom labels for pod"
 annotations:
   global:
-    description: "Global annotation for all resources"
   service:
-    description: "Custom annotation for service"
   deployment:
-    description: "Custom annotation for deployment"
   pod:
-    description: "Custom annotation for pod"
 
 # Deployment resources
 resources:

@@ -10,16 +10,16 @@ metadata:
     app.kubernetes.io/component: "statefulset"
     app.kubernetes.io/managed-by: "Helm"
     {{- with (default dict .Values.labels.global) }}{{ toYaml . | nindent 4 }}{{- end }}
-    {{- with (default dict .Values.labels.deployment) }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- with (default dict .Values.labels.statefulset) }}{{ toYaml . | nindent 4 }}{{- end }}
   annotations:
     {{- with (default dict .Values.annotations.global) }}{{ toYaml . | nindent 4 }}{{- end }}
-    {{- with (default dict .Values.annotations.deployment) }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- with (default dict .Values.annotations.statefulset) }}{{ toYaml . | nindent 4 }}{{- end }}
 spec:
-  serviceName: "{{ include "chart-template.fullname" . }}-service"
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: "{{ include "chart-template.fullname" . }}"
+  serviceName: "{{ include "chart-template.fullname" . }}-headless"
   template:
     metadata:
       labels:
@@ -84,21 +84,22 @@ spec:
               cpu: "{{ .Values.resources.requests.cpu }}"
             {{- end }}
           volumeMounts:
+            {{- if .Values.config.enabled }}
             - name: config
-              mountPath: /config
+              mountPath: "{{ .Values.config.mountPath }}"
+            {{- end }}
+            {{- if .Values.shared-media.enabled }}
             - name: shared-media
-              mountPath: /media
+              mountPath: "{{ .Values.shared-media.mountPath }}"
+            {{- end }}
       volumes:
+        {{- if .Values.config.enabled }}
+        - name: config
+          persistentVolumeClaim:
+            claimName: "{{ include "chart-template.fullname" . }}-config-pvc"
+        {{- end }}
+        {{- if .Values.shared-media.enabled }}
         - name: shared-media
           persistentVolumeClaim:
             claimName: "shared-media-pvc"
-  volumeClaimTemplates:
-    - metadata:
-        name: config
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: "1Gi"
-        storageClassName: "csi-cephfs-sc"
+        {{- end }}
