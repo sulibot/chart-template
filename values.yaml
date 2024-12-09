@@ -69,6 +69,7 @@ securityContext:
 config:
   enabled: true                 # PVC is enabled by default
   mountPath: /config            # Default mount path for config PVC
+  storageSize: "100Mi"
 
 # Shared PVC configuration
 sharedMedia:
