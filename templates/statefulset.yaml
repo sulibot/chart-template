@@ -57,9 +57,9 @@ spec:
             - name: config
               mountPath: "{{ .Values.config.mountPath }}"
             {{- end }}
-            {{- if .Values.shared-media.enabled }}
-            - name: shared-media
-              mountPath: "{{ .Values.shared-media.mountPath }}"
+            {{- if .Values.sharedMedia.enabled }}
+            - name: sharedMedia
+              mountPath: "{{ .Values.sharedMedia.mountPath }}"
             {{- end }}
       tolerations: {{ toYaml .Values.tolerations | nindent 6 }}
       affinity: {{ toYaml .Values.affinity | nindent 6 }}
@@ -77,9 +77,9 @@ spec:
             storage: "{{ .Values.config.storageSize | default "1Gi" }}"
         storageClassName: "csi-cephfs-sc"
     {{- end }}
-    {{- if .Values.shared-media.enabled }}
+    {{- if .Values.sharedMedia.enabled }}
     - metadata:
-        name: shared-media
+        name: sharedMedia
         labels:
           app: "{{ include "chart-template.fullname" . }}"
       spec:
@@ -87,6 +87,6 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: "{{ .Values.shared-media.storageSize | default "5Gi" }}"
+            storage: "{{ .Values.sharedMedia.storageSize | default "5Gi" }}"
         storageClassName: "csi-cephfs-sc"
     {{- end }}
