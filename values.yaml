@@ -11,6 +11,12 @@ image:
 # Timezone
 timezone: "America/Los_Angeles"  # Default timezone for the application
 
+env:
+  - name: PUID
+    value: "1000"
+  - name: PGID
+    value: "1000"
+
 # Replicas
 replicaCount: 1
 
