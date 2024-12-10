@@ -73,7 +73,7 @@ spec:
               mountPath: "{{ .Values.config.mountPath }}"
             {{- end }}
             {{- if .Values.sharedMedia.enabled }}
-            - name: sharedMedia
+            - name: shared-media-pvc
               mountPath: "{{ .Values.sharedMedia.mountPath }}"
             {{- end }}
       volumes:
