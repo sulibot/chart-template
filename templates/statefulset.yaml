@@ -72,9 +72,9 @@ spec:
             - name: config
               mountPath: "{{ .Values.config.mountPath }}"
             {{- end }}
-            {{- if .Values.sharedMedia.enabled }}
+            {{- if .Values.shared-media-pvc.enabled }}
             - name: shared-media-pvc
-              mountPath: "{{ .Values.sharedMedia.mountPath }}"
+              mountPath: "{{ .Values.shared-media-pvc.mountPath }}"
             {{- end }}
       volumes:
 #        {{- if .Values.config.enabled }}
@@ -82,7 +82,7 @@ spec:
 #          persistentVolumeClaim:
 #            claimName: "{{ include "chart-template.fullname" . }}-config-pvc"
 #        {{- end }}
-        {{- if .Values.sharedMedia.enabled }}
+        {{- if .Values.shared-media-pvc.enabled }}
         - name: shared-media-pvc
           persistentVolumeClaim:
             claimName: "shared-media-pvc"  # Reference to existing PVC
