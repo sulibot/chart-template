@@ -77,11 +77,11 @@ spec:
               mountPath: "{{ .Values.sharedMedia.mountPath }}"
             {{- end }}
       volumes:
-        {{- if .Values.config.enabled }}
-        - name: config
-          persistentVolumeClaim:
-            claimName: "{{ include "chart-template.fullname" . }}-config-pvc"
-        {{- end }}
+#        {{- if .Values.config.enabled }}
+#        - name: config
+#          persistentVolumeClaim:
+#            claimName: "{{ include "chart-template.fullname" . }}-config-pvc"
+#        {{- end }}
         {{- if .Values.sharedMedia.enabled }}
         - name: sharedMedia
           persistentVolumeClaim:
