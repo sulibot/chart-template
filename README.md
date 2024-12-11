@@ -139,7 +139,7 @@ flux get helmreleases -A
 
 ### 2. **Persistent Volume Claims**
    - Application-specific config PVCs are enabled by default.
-   - Shared media PVC can be enabled or disabled via `sharedMedia.enabled`.
+   - Shared media PVC can be enabled or disabled via `media.enabled`.
 
 ### 3. **Networking**
    - Customize hostnames and Gateway configurations in `values.yaml`.
