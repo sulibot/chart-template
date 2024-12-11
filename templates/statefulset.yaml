@@ -102,5 +102,5 @@ spec:
         resources:
           requests:
             storage: "{{ .Values.config.storageSize | default "1Gi" }}"
-        storageClassName: "csi-cephfs-sc"
+        storageClassName: "csi-cephfs-sc-retain"
   {{- end }}
