@@ -9,8 +9,7 @@ metadata:
     app.kubernetes.io/version: {{ .Chart.AppVersion }}
     app.kubernetes.io/component: httproute
 
-  annotations:
-    description: "Annotations for httproute"
+  annotations: {}
 spec:
   parentRefs:
     - name: {{ .Values.gateway.name }}
