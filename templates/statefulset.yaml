@@ -72,15 +72,15 @@ spec:
             - name: config
               mountPath: "{{ .Values.config.mountPath }}"
             {{- end }}
-            {{- if .Values.media.enabled }}
-            - name: media
-              mountPath: "{{ .Values.media.mountPath }}"
+            {{- if .Values.data.enabled }}
+            - name: data
+              mountPath: "{{ .Values.data.mountPath }}"
             {{- end }}
       volumes:
-        {{- if .Values.media.enabled }}
-        - name: media
+        {{- if .Values.data.enabled }}
+        - name: data
           persistentVolumeClaim:
-            claimName: "media-cephfs-pvc"  # Reference to existing PVC
+            claimName: "data-cephfs-pvc"  # Reference to existing PVC
         {{- end }}
       tolerations:
         {{- if .Values.tolerations }}

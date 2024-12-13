@@ -72,9 +72,9 @@ config:
   storageSize: "100Mi"
 
 # Shared PVC configuration
-media:
+data:
   enabled: true                 # Shared PVC is enabled by default
-  mountPath: /media             # Mount path for shared PVC
+  mountPath: /data             # Mount path for shared PVC
 
 # Init container configuration
 initContainer:
@@ -92,8 +92,8 @@ initContainer:
   volumeMounts:                 # Volume mounts for the init container
     - name: config
       mountPath: /config
-    - name: media
-      mountPath: /media
+    - name: data
+      mountPath: /data
 
 
 # Tolerations and Affinity

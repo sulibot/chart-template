@@ -8,7 +8,7 @@ A Helm chart template designed for deploying containerized applications with fle
 ## Features
 
 - **Resource Limits**: Enable or disable CPU and memory requests/limits.
-- **Persistent Volume Claims**: Supports application-specific config PVCs and shared media PVCs.
+- **Persistent Volume Claims**: Supports application-specific config PVCs and shared data PVCs.
 - **Networking**: Easily configure Gateway and HTTPRoute for custom hostnames.
 - **Health Probes**: Liveness, Readiness, and Startup probes for monitoring application health.
 - **Annotations and Labels**: Fully customizable metadata for all resources.
@@ -139,7 +139,7 @@ flux get helmreleases -A
 
 ### 2. **Persistent Volume Claims**
    - Application-specific config PVCs are enabled by default.
-   - Shared media PVC can be enabled or disabled via `media.enabled`.
+   - Shared data PVC can be enabled or disabled via `data.enabled`.
 
 ### 3. **Networking**
    - Customize hostnames and Gateway configurations in `values.yaml`.
