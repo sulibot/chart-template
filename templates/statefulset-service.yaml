@@ -182,7 +182,7 @@ metadata:
 spec:
   parentRefs:
     - name: "{{ .Values.gateway.name }}"
-      namespace: "{{ .Values.namespace }}"
+      namespace: "{{ .Values.gateway.namespace }}"
   hostnames:
     - "{{ printf "%s.%s" (default "default-name" .Values.name) (default "sulibot.com" .Values.gateway.domain) }}"
   rules:
@@ -192,5 +192,6 @@ spec:
             value: /
       backendRefs:
         - name: "{{ include "chart-template.fullname" . }}-service"
+        - namespace: "{{ .Values.namespace }}"
           port: {{ .Values.ports.servicePort }}
 {{- end }}
