@@ -1,23 +1,12 @@
 # General application settings
-name: app-name                  # Application name (used for naming resources and host subdomain)
-namespace: media                # Namespace for the application, PVCs, and services
+name: app-name                  # Default application name
+namespace: media                # Namespace for the application
 
 # Docker container settings
 image:
   repository: my-container-repo
-  tag: latest                   # Optional: Specify a tag for the image
-  digest: ""                    # Optional: Specify a digest for the image (e.g., sha256:...)
-
-# Timezone
-timezone: "America/Los_Angeles"  # Default timezone for the application
-
-# Environment variables
-env:
-# Uncomment and customize environment variables as needed
-#  - name: PUID
-#    value: "911"
-#  - name: PGID
-#    value: "911"
+  tag: latest                   # Image tag for the container
+  pullPolicy: IfNotPresent      # Image pull policy
 
 # Replica settings
 replicaCount: 1
@@ -25,98 +14,74 @@ replicaCount: 1
 # Port configuration
 ports:
   servicePort: 80               # Port exposed by the service
-  targetPort: 8080              # Port used by the container
+  targetPort: 8080              # Target port in the container
 
-# Network configuration
+# DNS configuration
+dnsPolicy: ClusterFirst          # Default DNS policy
+dnsConfig:
+  enabled: false                # Enable or disable custom DNS settings
+  options:
+    - name: ndots
+      value: "1"
+
+# Config PVC settings
+config:
+  enabled: false                # Enable or disable Config PVC
+  mountPath: /config            # Mount path for the Config PVC
+  storageSize: 100Mi            # Default size for the Config PVC
+
+# Data PVC settings
+data:
+  enabled: true                 # Enable or disable Data PVC
+  mountPath: /data              # Mount path for the Data PVC
+  storageSize: 10Gi             # Size of the Data PVC
+
+# Security context settings
+securityContext:
+  enabled: true                 # Enable or disable security context
+  readOnlyRootFilesystem: true  # Restrict container filesystem to read-only
+  allowPrivilegeEscalation: false # Restrict privilege escalation
+
+# Resource limits and requests
+resources:
+  enabled: false                # Enable or disable resource settings
+  requests:
+    memory: "256Mi"             # Memory request for the container
+    cpu: "250m"                 # CPU request for the container
+  limits:
+    memory: "512Mi"             # Memory limit for the container
+    cpu: "500m"                 # CPU limit for the container
+
+# Tolerations and affinity
+tolerations: []                 # Define tolerations for node taints
+affinity: {}                    # Define node and pod affinity rules
+
+# Headless service configuration
+headless:
+  enabled: false                # Enable or disable headless service
+
+# Ingress configuration
+ingress:
+  enabled: false                # Enable or disable Ingress
+  className: cilium             # Ingress class name
+  tls:
+    certManagerIssuer: letsencrypt-prod # Cert-manager issuer for TLS certificates
+
+# Gateway configuration
 gateway:
-  name: gateway-internal        # Defaults to "gateway-internal"
-  namespace: network            # Namespace for the Gateway and HTTPRoute
+  enabled: false                # Enable or disable HTTPRoute
+  name: gateway-internal        # Name of the Gateway
+  namespace: network            # Namespace of the Gateway
   domain: sulibot.com           # Default domain for hostnames
+
+# Environment variables
+env: []                         # Define additional environment variables
+# Example:
+# - name: ENV_VAR_1
+#   value: "value1"
 
 # Labels and Annotations
 labels:
-  global: {}                    # Global labels for all resources
-  service: {}                   # Labels specific to the service
-  deployment: {}                # Labels specific to the deployment
-  pod: {}                       # Labels specific to the pod
-
+  global: {}                    # Global labels applied to all resources
 annotations:
-  global: {}                    # Global annotations for all resources
-  service: {}                   # Annotations specific to the service
-  deployment: {}                # Annotations specific to the deployment
-  pod: {}                       # Annotations specific to the pod
-
-# Resource requests and limits
-resources:
-  enabled: false                # Resource limits and requests are disabled by default
-  requests:
-    memory: "256Mi"             # Minimum memory requested
-    cpu: "250m"                 # Minimum CPU requested
-  limits:
-    memory: "512Mi"             # Maximum memory allowed
-    cpu: "500m"                 # Maximum CPU allowed
-
-# Security context configuration
-securityContext:
-  enabled: false                # Must be explicitly enabled
-  runAsUser: 1000
-  runAsGroup: 1000
-  fsGroup: 1000
-  readOnlyRootFilesystem: true
-  allowPrivilegeEscalation: false
-
-# Config PVC configuration
-config:
-  enabled: true                 # PVC is enabled by default
-  mountPath: /config            # Default mount path for config PVC
-  storageSize: "100Mi"
-
-# Shared PVC configuration
-data:
-  enabled: true                 # Shared PVC is enabled by default
-  mountPath: /data             # Mount path for shared PVC
-
-# Init container configuration
-initContainer:
-  enabled: false                # Enable or disable the init container
-  name: setup-container         # Name of the init container
-  image: busybox                # Docker image to use
-  command:                      # Command to run in the init container
-    - /bin/sh
-    - -c
-  args:                         # Arguments for the command
-    - "echo Setting up environment"
-  env:                          # Environment variables for the init container
-    - name: SAMPLE_ENV
-      value: "init-container-value"
-  volumeMounts:                 # Volume mounts for the init container
-    - name: config
-      mountPath: /config
-    - name: data
-      mountPath: /data
-
-
-# Tolerations and Affinity
-tolerations: []                   # Define tolerations to schedule pods on tainted nodes
-# Example:
-# - key: "key1"
-#   operator: "Equal"
-#   value: "value1"
-#   effect: "NoSchedule"
-
-affinity: {}                      # Define node and pod affinity rules
-# Example:
-# nodeAffinity:
-#   requiredDuringSchedulingIgnoredDuringExecution:
-#     nodeSelectorTerms:
-#       - matchExpressions:
-#           - key: "key1"
-#             operator: "In"
-#             values:
-#               - "value1"
-# podAffinity:
-#   requiredDuringSchedulingIgnoredDuringExecution:
-#     - labelSelector:
-#         matchLabels:
-#           app: "example-app"
-#       topologyKey: "kubernetes.io/hostname"
+  pod: {}                       # Pod-level annotations

@@ -29,7 +29,7 @@ spec:
         {{- end }}
     spec:
       dnsPolicy: {{ .Values.dnsPolicy | default "ClusterFirst" }}
-      {{- if (default false .Values.dnsConfig.enabled) }}
+      {{- if .Values.dnsConfig.enabled | default false }}
       dnsConfig:
         options:
           {{- toYaml .Values.dnsConfig.options | nindent 10 }}
@@ -61,19 +61,19 @@ spec:
               cpu: "{{ .Values.resources.limits.cpu }}"
             {{- end }}
           volumeMounts:
-            {{- if (default false .Values.config.enabled) }}
+            {{- if .Values.config.enabled | default false }}
             - name: config
               mountPath: "{{ .Values.config.mountPath }}"
             {{- end }}
-            {{- if (default false .Values.data.enabled) }}
+            {{- if .Values.data.enabled | default false }}
             - name: data
               mountPath: "{{ .Values.data.mountPath }}"
             {{- end }}
       volumes:
-        {{- if (default false .Values.data.enabled) }}
+        {{- if .Values.data.enabled | default false }}
         - name: data
           persistentVolumeClaim:
-            claimName: "data-cephfs-pvc"  # Reference to existing PVC
+            claimName: "data-cephfs-pvc"  # Reference to dynamically mounted PVC
         {{- end }}
       tolerations:
         {{- if .Values.tolerations }}
@@ -83,7 +83,7 @@ spec:
         {{- if .Values.affinity }}
         {{ toYaml .Values.affinity | nindent 8 }}
         {{- end }}
-  {{- if (default false .Values.config.enabled) }}
+  {{- if .Values.config.enabled | default false }}
   volumeClaimTemplates:
     - metadata:
         name: config
@@ -94,6 +94,103 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: "{{ .Values.config.storageSize | default "1Gi" }}"
+            storage: "{{ .Values.config.storageSize | default "100Mi" }}"
         storageClassName: "csi-cephfs-sc-retain"
   {{- end }}
+
+---
+
+# Headless Service
+{{- if .Values.headless.enabled | default false }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ include "chart-template.fullname" . }}-headless"
+  namespace: "{{ .Values.namespace }}"
+spec:
+  clusterIP: None
+  selector:
+    app: "{{ include "chart-template.fullname" . }}"
+  ports:
+    - name: http
+      port: {{ .Values.ports.servicePort }}
+      targetPort: {{ .Values.ports.targetPort }}
+{{- end }}
+
+---
+
+# Standard Service
+{{- if or (.Values.gateway.enabled | default false) (.Values.ingress.enabled | default false) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ include "chart-template.fullname" . }}-service"
+  namespace: "{{ .Values.namespace }}"
+  labels:
+    app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+spec:
+  selector:
+    app: "{{ include "chart-template.fullname" . }}"
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.ports.servicePort }}
+      targetPort: {{ .Values.ports.targetPort }}
+  type: ClusterIP
+{{- end }}
+
+---
+
+# Ingress Configuration
+{{- if .Values.ingress.enabled | default false }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: "{{ include "chart-template.fullname" . }}-ingress"
+  namespace: "{{ .Values.namespace }}"
+  annotations:
+    kubernetes.io/ingress.class: "{{ .Values.ingress.className }}"
+    cert-manager.io/cluster-issuer: "{{ .Values.ingress.tls.certManagerIssuer }}"
+spec:
+  tls:
+    - hosts:
+        - "{{ printf "%s.%s" (include "chart-template.fullname" .) (default "sulibot.com" .Values.gateway.domain) }}"
+      secretName: "{{ include "chart-template.fullname" . }}-tls"
+  rules:
+    - host: "{{ printf "%s.%s" (include "chart-template.fullname" .) (default "sulibot.com" .Values.gateway.domain) }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: "{{ include "chart-template.fullname" . }}-service"
+                port:
+                  number: {{ .Values.ports.servicePort }}
+{{- end }}
+
+---
+
+# HTTPRoute Configuration
+{{- if .Values.gateway.enabled | default false }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: "{{ include "chart-template.fullname" . }}-route"
+  namespace: "{{ .Values.namespace }}"
+spec:
+  parentRefs:
+    - name: "{{ .Values.gateway.name }}"
+      namespace: "{{ .Values.gateway.namespace }}"
+  hostnames:
+    - "{{ printf "%s.%s" (default "default-name" .Values.name) (default "sulibot.com" .Values.gateway.domain) }}"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: "{{ include "chart-template.fullname" . }}-service"
+          port: {{ .Values.ports.servicePort }}
+{{- end }}
