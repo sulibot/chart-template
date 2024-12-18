@@ -1,0 +1,99 @@
+# StatefulSet configuration
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "{{ include "chart-template.fullname" . }}"
+  namespace: "{{ .Values.namespace }}"
+  labels:
+    app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
+    app.kubernetes.io/component: "statefulset"
+    app.kubernetes.io/managed-by: "Helm"
+    {{- with (default dict .Values.labels.global) }}
+    {{ toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: "{{ include "chart-template.fullname" . }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ include "chart-template.fullname" . }}"
+        app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
+      annotations:
+        {{- with (default dict .Values.annotations.pod) }}
+        {{ toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      dnsPolicy: {{ .Values.dnsPolicy | default "ClusterFirst" }}
+      {{- if (default false .Values.dnsConfig.enabled) }}
+      dnsConfig:
+        options:
+          {{- toYaml .Values.dnsConfig.options | nindent 10 }}
+      {{- end }}
+      containers:
+        - name: "{{ include "chart-template.fullname" . }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: {{ .Values.ports.targetPort }}
+          env:
+            - name: TZ
+              value: "{{ .Values.timezone }}"
+            {{- with .Values.env }}
+            {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if .Values.securityContext.enabled }}
+          securityContext:
+            readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
+            allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
+          {{- end }}
+          resources:
+            {{- if .Values.resources.enabled }}
+            requests:
+              memory: "{{ .Values.resources.requests.memory }}"
+              cpu: "{{ .Values.resources.requests.cpu }}"
+            limits:
+              memory: "{{ .Values.resources.limits.memory }}"
+              cpu: "{{ .Values.resources.limits.cpu }}"
+            {{- end }}
+          volumeMounts:
+            {{- if (default false .Values.config.enabled) }}
+            - name: config
+              mountPath: "{{ .Values.config.mountPath }}"
+            {{- end }}
+            {{- if (default false .Values.data.enabled) }}
+            - name: data
+              mountPath: "{{ .Values.data.mountPath }}"
+            {{- end }}
+      volumes:
+        {{- if (default false .Values.data.enabled) }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: "data-cephfs-pvc"  # Reference to existing PVC
+        {{- end }}
+      tolerations:
+        {{- if .Values.tolerations }}
+        {{ toYaml .Values.tolerations | nindent 8 }}
+        {{- end }}
+      affinity:
+        {{- if .Values.affinity }}
+        {{ toYaml .Values.affinity | nindent 8 }}
+        {{- end }}
+  {{- if (default false .Values.config.enabled) }}
+  volumeClaimTemplates:
+    - metadata:
+        name: config
+        labels:
+          app: "{{ include "chart-template.fullname" . }}"
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "{{ .Values.config.storageSize | default "1Gi" }}"
+        storageClassName: "csi-cephfs-sc-retain"
+  {{- end }}
