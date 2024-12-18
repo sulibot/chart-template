@@ -182,7 +182,7 @@ metadata:
 spec:
   parentRefs:
     - name: "{{ .Values.gateway.name }}"
-      namespace: "{{ .Values.gateway.namespace }}"
+      namespace: "{{ .Values.namespace }}"
   hostnames:
     - "{{ printf "%s.%s" (default "default-name" .Values.name) (default "sulibot.com" .Values.gateway.domain) }}"
   rules:
