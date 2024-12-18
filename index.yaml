@@ -1,0 +1,24 @@
+apiVersion: v1
+entries:
+  chart-template:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2024-12-17T19:22:47.41978-08:00"
+    description: A reusable Helm chart template for deploying containerized applications
+    digest: e3f4ce4e866a417656beb4ce90090657013cfc24761e794b6b82f5d9a70619fc
+    name: chart-template
+    type: application
+    urls:
+    - https://sulibot.github.io/chart-template/chart-template-0.1.0.tgz
+    version: 0.1.0
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2024-12-17T19:22:47.420856-08:00"
+    description: A reusable Helm chart template for deploying containerized applications
+    digest: 4afcf961789b0a787864b1d531ab94e9004d5e5842e311e7e78bab052f7b5499
+    name: chart-template
+    type: application
+    urls:
+    - https://sulibot.github.io/chart-template/untitled%20folder/chart-template-0.1.0.tgz.tgz
+    version: 0.1.0
+generated: "2024-12-17T19:22:47.41906-08:00"
