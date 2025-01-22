@@ -47,12 +47,6 @@ spec:
             {{ toYaml . | nindent 12 }}
             {{- end }}
 
-          {{- if .Values.envFrom.enabled }}
-            envFrom:
-              - secretRef:
-                  name: {{ .Values.envFrom.secretRef }}
-          {{- end }}
-
           {{- if .Values.securityContext.enabled }}
           securityContext:
             readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
