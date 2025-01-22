@@ -80,7 +80,7 @@ spec:
         {{- if .Values.data.enabled | default false }}
         - name: data
           persistentVolumeClaim:
-            claimName: "cephfs-data-pvc"  # Reference to dynamically mounted PVC
+            claimName: "cephfs-pvc-media"  # Reference to dynamically mounted PVC
         {{- end }}
       tolerations:
         {{- if .Values.tolerations }}
@@ -102,7 +102,7 @@ spec:
         resources:
           requests:
             storage: "{{ .Values.config.storageSize | default "100Mi" }}"
-        storageClassName: "csi-cephfs-sc"
+        storageClassName: "csi-cephfs-sc-retain"
   {{- end }}
 
 ---
