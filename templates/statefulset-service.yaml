@@ -46,6 +46,13 @@ spec:
             {{- with .Values.env }}
             {{ toYaml . | nindent 12 }}
             {{- end }}
+
+          {{- if .Values.envFrom.enabled }}
+            envFrom:
+              - secretRef:
+                  name: {{ .Values.envFrom.secretRef }}
+          {{- end }}
+
           {{- if .Values.securityContext.enabled }}
           securityContext:
             readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
@@ -73,7 +80,7 @@ spec:
         {{- if .Values.data.enabled | default false }}
         - name: data
           persistentVolumeClaim:
-            claimName: "data-cephfs-pvc"  # Reference to dynamically mounted PVC
+            claimName: "cephfs-data-pvc"  # Reference to dynamically mounted PVC
         {{- end }}
       tolerations:
         {{- if .Values.tolerations }}
@@ -95,7 +102,7 @@ spec:
         resources:
           requests:
             storage: "{{ .Values.config.storageSize | default "100Mi" }}"
-        storageClassName: "csi-cephfs-sc-retain"
+        storageClassName: "csi-cephfs-sc"
   {{- end }}
 
 ---
