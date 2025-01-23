@@ -51,6 +51,10 @@ spec:
           securityContext:
             readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
             allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
+            runAsUser: {{ .Values.securityContext.runAsUser }}
+            runAsGroup: {{ .Values.securityContext.runAsGroup }}
+            fsGroup: {{ .Values.securityContext.fsGroup }}
+            fsGroupChangePolicy: {{ .Values.securityContext.fsGroupChangePolicy }}
           {{- end }}
           resources:
             {{- if .Values.resources.enabled }}
