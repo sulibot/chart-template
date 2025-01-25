@@ -102,7 +102,7 @@ spec:
         resources:
           requests:
             storage: "{{ .Values.config.storageSize | default "100Mi" }}"
-        storageClassName: "cephfs-csi-sc-retain"
+        storageClassName: "cephfs-csi-sol-sc-retain"
   {{- end }}
 
 ---
