@@ -54,10 +54,10 @@ containerSecurityContext:
   enabled: true
   readOnlyRootFilesystem: false
   allowPrivilegeEscalation: false
-  config:
-    capabilities:
-      add:
-        - SETGID
+#  config:
+#    capabilities:
+#      add:
+#        - SETGID
 
 # Resource limits and requests
 resources:
