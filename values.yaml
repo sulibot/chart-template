@@ -16,6 +16,11 @@ ports:
   servicePort: 80               # Port exposed by the service
   targetPort: 8080              # Target port in the container
 
+# Global networking options
+networking:
+  ipFamilyPolicy: PreferDualStack  # Can be PreferDualStack, RequireDualStack, or SingleStack
+  singleStackIPFamily: IPv4        # Default to IPv4 for single-stack clusters
+  
 # DNS configuration
 dnsPolicy: ClusterFirst          # Default DNS policy
 dnsConfig:
