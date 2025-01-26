@@ -36,8 +36,6 @@ spec:
       {{- else }}
         {}
       {{- end }}
-
-
  
       {{- if .Values.podSecurityContext.enabled | default false }}
       securityContext:
@@ -70,6 +68,8 @@ spec:
             limits:
               memory: "{{ .Values.resources.limits.memory }}"
               cpu: "{{ .Values.resources.limits.cpu }}"
+            {{- else }}
+              {}
             {{- end }}
           volumeMounts:
             {{- if .Values.config.enabled | default false }}
