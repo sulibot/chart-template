@@ -31,13 +31,16 @@ spec:
       dnsPolicy: {{ .Values.dnsPolicy | default "ClusterFirst" }}
       {{- if .Values.dnsConfig.enabled | default false }}
       dnsConfig:
+      {{- if .Values.dnsConfig.enabled }}
         options:
           {{- toYaml .Values.dnsConfig.options | nindent 10 }}
+      {{- else }}
+        {}
       {{- end }}
  
       {{- if .Values.podSecurityContext.enabled | default false }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext.config | nindent 8 }}
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- end }}
 
       containers:
@@ -55,7 +58,7 @@ spec:
 
           {{- if .Values.containerSecurityContext.enabled | default false }}
           securityContext:
-            {{- toYaml .Values.containerSecurityContext.config | nindent 12 }}
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           {{- end }}
 
           resources:
