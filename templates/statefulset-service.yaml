@@ -39,7 +39,7 @@ spec:
  
       {{- if .Values.podSecurityContext.enabled | default false }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml (omit .Values.podSecurityContext "enabled") | nindent 8 }}
       {{- end }}
 
       containers:
@@ -57,7 +57,7 @@ spec:
 
           {{- if .Values.containerSecurityContext.enabled | default false }}
           securityContext:
-            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+            {{- toYaml (omit .Values.containerSecurityContext "enabled") | nindent 12 }}
           {{- end }}
           {{- if .Values.resources.enabled }}
           resources:
