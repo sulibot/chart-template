@@ -59,18 +59,16 @@ spec:
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           {{- end }}
-
+          {{- if .Values.resources.enabled }}
           resources:
-            {{- if .Values.resources.enabled }}
+
             requests:
               memory: "{{ .Values.resources.requests.memory }}"
               cpu: "{{ .Values.resources.requests.cpu }}"
             limits:
               memory: "{{ .Values.resources.limits.memory }}"
               cpu: "{{ .Values.resources.limits.cpu }}"
-            {{- else }}
-              {}
-            {{- end }}
+          {{- end }}
           volumeMounts:
             {{- if .Values.config.enabled | default false }}
             - name: config
