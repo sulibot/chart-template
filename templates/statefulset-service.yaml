@@ -90,6 +90,9 @@ spec:
           persistentVolumeClaim:
             claimName: "cephfs-pvc-media"  # Reference to dynamically mounted PVC
         {{- end }}
+        {{- if .Values.volumesExtras }}
+        {{ toYaml .Values.volumesExtras | nindent 8 }}
+        {{- end }}
       tolerations:
         {{- if .Values.tolerations }}
         {{ toYaml .Values.tolerations | nindent 8 }}

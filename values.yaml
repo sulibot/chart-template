@@ -51,6 +51,11 @@ data:
 #    subPath: settings.json              # Enable or disable additional volume mounts
 #  
 
+#volumesExtras:
+#  - name: config-volume
+#    configMap:
+#      name: filebrowser-config
+
 # Pod-level security context
 podSecurityContext:
   enabled: true
