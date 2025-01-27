@@ -69,15 +69,23 @@ spec:
               memory: "{{ .Values.resources.limits.memory }}"
               cpu: "{{ .Values.resources.limits.cpu }}"
           {{- end }}
+          
           volumeMounts:
             {{- if .Values.config.enabled | default false }}
             - name: config
               mountPath: "{{ .Values.config.mountPath }}"
+              storageSize: "{{ .Values.config.storageSize | default '100Mi' }}"
             {{- end }}
             {{- if .Values.data.enabled | default false }}
             - name: data
               mountPath: "{{ .Values.data.mountPath }}"
+              storageSize: "{{ .Values.data.storageSize | default '10Gi' }}" 
             {{- end }}
+
+            {{- if .Values.volumeMountsExtras.enabled | default false }}
+              {{- toYaml (omit .Values.volumeMountsExtras "enabled") | nindent 14 }}
+            {{- end }}
+
       volumes:
         {{- if .Values.data.enabled | default false }}
         - name: data
@@ -127,8 +135,14 @@ spec:
   ipFamilies:
     - {{ .Values.networking.singleStackIPFamily | default "IPv4" }}
   {{- end }}
+
   selector:
+    {{- if .Values.headless.selector }}
+    {{ toYaml .Values.headless.selector | nindent 4 }}
+    {{- else }}
     app: "{{ include "chart-template.fullname" . }}"
+    {{- end }}
+
   ports:
     - name: http
       port: {{ .Values.ports.servicePort }}
