@@ -74,12 +74,12 @@ spec:
             {{- if .Values.config.enabled | default false }}
             - name: config
               mountPath: "{{ .Values.config.mountPath }}"
-              storageSize: "{{ .Values.config.storageSize | default '100Mi' }}"
+              storageSize: "{{ .Values.config.storageSize | default "100Mi" }}"
             {{- end }}
             {{- if .Values.data.enabled | default false }}
             - name: data
               mountPath: "{{ .Values.data.mountPath }}"
-              storageSize: "{{ .Values.data.storageSize | default '10Gi' }}" 
+              storageSize: "{{ .Values.data.storageSize | default "10Gi" }}" 
             {{- end }}
 
             {{- if .Values.volumeMountsExtras }}
