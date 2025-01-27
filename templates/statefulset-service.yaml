@@ -33,8 +33,6 @@ spec:
       dnsConfig:
         options:
           {{- toYaml .Values.dnsConfig.options | nindent 10 }}
-      {{- else }}
-        {}
       {{- end }}
  
       {{- if .Values.podSecurityContext.enabled | default false }}

@@ -22,7 +22,7 @@ networking:
   singleStackIPFamily: IPv4        # Default to IPv4 for single-stack clusters
   
 # DNS configuration
-dnsPolicy: ClusterFirst          # Default DNS policy
+dnsPolicy: ClusterFirst       # Default DNS policy
 dnsConfig:
   enabled: false                # Enable or disable custom DNS settings
   options:
@@ -54,9 +54,9 @@ data:
 # Pod-level security context
 podSecurityContext:
   enabled: true
-  runAsUser: 65534
-  runAsGroup: 65534
-  fsGroup: 65534
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
   fsGroupChangePolicy: OnRootMismatch
 
 # Container-level security context
