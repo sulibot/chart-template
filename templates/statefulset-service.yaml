@@ -82,7 +82,7 @@ spec:
               storageSize: "{{ .Values.data.storageSize | default "10Gi" }}" 
             {{- end }}
 
-            {{- if and .Values.volumeMountsExtras.enabled (not (empty .Values.volumeMountsExtras.items)) }}
+            {{- if and (default false .Values.volumeMountsExtras.enabled) (not (empty .Values.volumeMountsExtras.items)) }}
             {{- range .Values.volumeMountsExtras.items }}
             - {{ toYaml . | nindent 14 }}
             {{- end }}
