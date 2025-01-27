@@ -85,11 +85,11 @@ spec:
             {{- if .Values.volumeMountsExtras }}
             {{- range .Values.volumeMountsExtras }}
             - {{- range $key, $value := . }}
-                {{ $key }}: {{ $value | quote }}
+              {{ $key }}: {{ $value | quote }}
               {{- end }}
             {{- end }}
             {{- end }}
-            
+
       volumes:
         {{- if .Values.data.enabled | default false }}
         - name: data
