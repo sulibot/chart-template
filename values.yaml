@@ -42,12 +42,14 @@ data:
   storageSize: 10Gi             # Size of the Data PVC
 
 volumeMountsExtras:
-  - name: config
-    mountPath: /filebrowser.db
-    subPath: filebrowser.db
-  - name: config
-    mountPath: /settings.json
-    subPath: settings.json              # Enable or disable additional volume mounts
+  enabled: true
+  items:
+    - name: config
+      mountPath: /filebrowser.db
+      subPath: filebrowser.db
+    - name: config
+      mountPath: /settings.json
+      subPath: settings.json          # Enable or disable additional volume mounts
   
 
 # Pod-level security context
