@@ -83,8 +83,7 @@ spec:
             {{- end }}
 
             {{- if .Values.volumeMountsExtras }}
-            securityContext:
-              {{- toYaml . | nindent 14 }}
+            {{ toYaml .Values.volumeMountsExtras | nindent 12 }}
             {{- end }}
 
 
