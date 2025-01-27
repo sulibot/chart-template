@@ -42,7 +42,6 @@ data:
   storageSize: 10Gi             # Size of the Data PVC
 
 volumeMountsExtras:
-  enabled: true
   - name: config
     mountPath: /filebrowser.db
     subPath: filebrowser.db
