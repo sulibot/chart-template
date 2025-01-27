@@ -81,13 +81,8 @@ spec:
               mountPath: "{{ .Values.data.mountPath }}"
               storageSize: "{{ .Values.data.storageSize | default "10Gi" }}" 
             {{- end }}
-            {{- if .Values.data.enabled | default false }}
-            - name: data
-              mountPath: "{{ .Values.data.mountPath }}"
-              storageSize: "{{ .Values.data.storageSize | default "10Gi" }}" 
-            {{- end }}
-            {{- if and .Values.volumeMountsExtras.enabled (not (empty .Values.volumeMountsExtras.items)) }}
-            {{ toYaml .Values.volumeMountsExtras.items | nindent 12 }}
+            {{- if .Values.volumeMountsExtras }}
+            {{ toYaml .Values.volumeMountsExtras | nindent 12 }}
             {{- end }}
 
 
