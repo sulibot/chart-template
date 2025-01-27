@@ -82,14 +82,11 @@ spec:
               storageSize: "{{ .Values.data.storageSize | default "10Gi" }}" 
             {{- end }}
 
-            {{- if .Values.volumeMountsExtras }}
+            {{- if .Values.volumeMountsExtras | default nil }}
             {{- range .Values.volumeMountsExtras }}
-            - {{- range $key, $value := . }}
-              {{ $key }}: {{ $value | quote }}
-              {{- end }}
+            - {{ toYaml . | nindent 14 }}
             {{- end }}
             {{- end }}
-
       volumes:
         {{- if .Values.data.enabled | default false }}
         - name: data
