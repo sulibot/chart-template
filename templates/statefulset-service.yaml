@@ -80,6 +80,7 @@ spec:
             - name: data
               mountPath: "{{ .Values.data.mountPath }}"
               storageSize: "{{ .Values.data.storageSize | default "10Gi" }}" 
+            {{- end }}
             {{- if .Values.data.enabled | default false }}
             - name: data
               mountPath: "{{ .Values.data.mountPath }}"
