@@ -44,6 +44,12 @@ spec:
         - name: "{{ include "chart-template.fullname" . }}"
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+          {{- if .Values.command }}
+          command: {{ toJson .Values.command }}
+          {{- end }}
+          {{- if .Values.args }}
+          args: {{ toJson .Values.args }}
+          {{- end }}
           ports:
             - containerPort: {{ .Values.ports.targetPort }}
           env:
