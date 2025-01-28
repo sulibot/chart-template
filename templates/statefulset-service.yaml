@@ -50,8 +50,6 @@ spec:
           {{- if .Values.args }}
           args: {{ toJson .Values.args }}
           {{- end }}
-          ports:
-            - containerPort: {{ .Values.ports.targetPort }}
           env:
             - name: TZ
               value: "{{ .Values.timezone }}"
