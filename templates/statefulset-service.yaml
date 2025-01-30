@@ -138,40 +138,6 @@ spec:
 
 ---
 
-# Headless Service
-{{- if .Values.headless.enabled | default false }}
-apiVersion: v1
-kind: Service
-metadata:
-  name: "{{ include "chart-template.fullname" . }}-headless"
-  namespace: "{{ .Values.namespace }}"
-spec:
-  clusterIP: None
-  ipFamilyPolicy: {{ .Values.networking.ipFamilyPolicy | default "PreferDualStack" }}
-  {{- if or (eq (.Values.networking.ipFamilyPolicy | default "PreferDualStack") "PreferDualStack") (eq (.Values.networking.ipFamilyPolicy) "RequireDualStack") }}
-  ipFamilies:
-    - IPv4
-    - IPv6
-  {{- else if eq (.Values.networking.ipFamilyPolicy) "SingleStack" }}
-  ipFamilies:
-    - {{ .Values.networking.singleStackIPFamily | default "IPv4" }}
-  {{- end }}
-
-  selector:
-    {{- if .Values.headless.selector }}
-    {{ toYaml .Values.headless.selector | nindent 4 }}
-    {{- else }}
-    app: "{{ include "chart-template.fullname" . }}"
-    {{- end }}
-
-  ports:
-    - name: http
-      port: {{ .Values.ports.servicePort }}
-      targetPort: {{ .Values.ports.targetPort }}
-{{- end }}
-
----
-
 # Standard Service
 {{- if or (.Values.gateway.enabled | default false) (.Values.ingress.enabled | default false) }}
 apiVersion: v1
@@ -264,3 +230,38 @@ spec:
           namespace: {{ .Values.namespace }}
           port: {{ .Values.ports.servicePort }}
 {{- end }}
+
+#---
+#
+## Headless Service
+#{{- if .Values.headless.enabled | default false }}
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: "{{ include "chart-template.fullname" . }}-headless"
+#  namespace: "{{ .Values.namespace }}"
+#spec:
+#  clusterIP: None
+#  ipFamilyPolicy: {{ .Values.networking.ipFamilyPolicy | default "PreferDualStack" }}
+#  {{- if or (eq (.Values.networking.ipFamilyPolicy | default "PreferDualStack") "PreferDualStack") (eq (.Values.networking.ipFamilyPolicy) "RequireDualStack") }}
+#  ipFamilies:
+#    - IPv4
+#    - IPv6
+#  {{- else if eq (.Values.networking.ipFamilyPolicy) "SingleStack" }}
+#  ipFamilies:
+#    - {{ .Values.networking.singleStackIPFamily | default "IPv4" }}
+#  {{- end }}
+#
+#  selector:
+#    {{- if .Values.headless.selector }}
+#    {{ toYaml .Values.headless.selector | nindent 4 }}
+#    {{- else }}
+#    app: "{{ include "chart-template.fullname" . }}"
+#    {{- end }}
+#
+#  ports:
+#    - name: http
+#      port: {{ .Values.ports.servicePort }}
+#      targetPort: {{ .Values.ports.targetPort }}
+#{{- end }}
+#
