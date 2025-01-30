@@ -123,7 +123,6 @@ spec:
         {{- if .Values.tolerations }}
         {{ toYaml .Values.tolerations | nindent 8 }}
         {{- end }}
-  {{- if .Values.config.enabled | default false }}
   volumeClaimTemplates:
     - metadata:
         name: config
