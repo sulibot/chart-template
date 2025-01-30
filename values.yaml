@@ -96,7 +96,17 @@ resources:
 
 # Tolerations and affinity
 tolerations: []                 # Define tolerations for node taints
-affinity: {}                    # Define node and pod affinity rules
+
+affinity:
+  enabled: false                # Enable or disable affinity rules
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: "intel.com/gpu.present"
+              operator: In
+              values:
+                - "true"                   # Define node and pod affinity rules
 
 # Headless service configuration
 headless:
@@ -129,3 +139,4 @@ labels:
 annotations:
   pod: {}                       # Pod-level annotations
 
+                  # Define affinity and anti-affinity rules
