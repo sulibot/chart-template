@@ -43,7 +43,7 @@ spec:
       {{- if .Values.affinity.enabled }}
       affinity:
         nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
+          preferredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
                   - key: topology.kubernetes.io/host
@@ -55,7 +55,6 @@ spec:
         {{- if .Values.affinity.nodeAffinity }}
           {{- toYaml .Values.affinity.nodeAffinity | nindent 10 }}
         {{- end }}
-
         {{- if .Values.affinity.podAffinity }}
         podAffinity:
           {{- toYaml .Values.affinity.podAffinity | nindent 10 }}
