@@ -100,18 +100,18 @@ tolerations: []                 # Define tolerations for node taints
 affinity:
   enabled: false
   nodeAffinity:
-    preferredDuringSchedulingIgnoredDuringExecution:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: "intel.feature.node.kubernetes.io/gpu"
-              operator: In
-              values:
-                - "true"
-#  podAffinity:
-#    requiredDuringSchedulingIgnoredDuringExecution:
-#      labelSelector:
-#        matchLabels:
-#          app: "my-app"                 # Define node and pod affinity rules
+    - matchExpressions:
+        - key: "intel.feature.node.kubernetes.io/gpu"
+          operator: In
+          values:
+            - "true"
+  
+  podAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      labelSelector:
+        matchLabels:
+          app: "my-app"
+
 
 # Headless service configuration
 headless:

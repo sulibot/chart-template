@@ -40,7 +40,6 @@ spec:
         {{- toYaml (omit .Values.podSecurityContext "enabled") | nindent 8 }}
       {{- end }}
 
-
 affinity:
   nodeAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
@@ -59,7 +58,6 @@ affinity:
   podAffinity:
     {{ toYaml .Values.affinity.podAffinity | nindent 4 }}
   {{- end }}
-
 
       containers:
         - name: "{{ include "chart-template.fullname" . }}"
@@ -82,9 +80,16 @@ affinity:
           securityContext:
             {{- toYaml (omit .Values.containerSecurityContext "enabled") | nindent 12 }}
           {{- end }}
-          {{- if .Values.resources.enabled | default false }}
+          {{- if .Values.resources.enabled }}
           resources:
-            {{- toYaml (omit .Values.resources "true") | nindent 12 }}
+            {{- if .Values.resources.requests }}
+            requests:
+              {{ toYaml .Values.resources.requests | nindent 12 }}
+            {{- end }}
+            {{- if .Values.resources.limits }}
+            limits:
+              {{ toYaml .Values.resources.limits | nindent 12 }}
+            {{- end }}
           {{- end }}
           
           volumeMounts:
