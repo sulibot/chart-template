@@ -41,10 +41,6 @@ spec:
       {{- end }}
 
 
-
-
-
-
 affinity:
   nodeAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
@@ -56,14 +52,14 @@ affinity:
                 - pve01
                 - pve02
                 - pve03
-        {{- if .Values.affinity.extraNodeSelectorTerms }}
-        {{- toYaml .Values.affinity.extraNodeSelectorTerms | nindent 8 }}
+        {{- if .Values.affinity.nodeAffinity }}
+        {{- toYaml .Values.affinity.nodeAffinity | nindent 8 }}
         {{- end }}
-
   {{- if .Values.affinity.podAffinity }}
   podAffinity:
     {{ toYaml .Values.affinity.podAffinity | nindent 4 }}
   {{- end }}
+
 
       containers:
         - name: "{{ include "chart-template.fullname" . }}"
