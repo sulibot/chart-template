@@ -50,7 +50,7 @@ affinity:
   nodeAffinity:
     {{- if .Values.affinity.nodeAffinity }}
     {{ toYaml .Values.affinity.nodeAffinity | nindent 4 }}
-#    {{- else }}
+    {{- end }}
     preferredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
         - matchExpressions:
@@ -60,7 +60,7 @@ affinity:
                 - pve01
                 - pve02
                 - pve03
-    {{- end }}
+  #  {{- end }}
 
   {{- if .Values.affinity.podAffinity }}
   podAffinity:
