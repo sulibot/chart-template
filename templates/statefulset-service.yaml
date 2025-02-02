@@ -50,7 +50,7 @@ affinity:
   nodeAffinity:
     {{- if .Values.affinity.nodeAffinity }}
     {{ toYaml .Values.affinity.nodeAffinity | nindent 4 }}
-    {{- else }}
+#    {{- else }}
     preferredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
         - matchExpressions:
