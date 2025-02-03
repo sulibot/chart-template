@@ -114,13 +114,13 @@ affinity:
               operator: In
               values:
                 - "true"
-  podAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      labelSelector:
-        matchLabels:
-          app: "my-app"
-  # Optional: define pod anti-affinity rules if needed
-  podAntiAffinity: {}           
+#  podAffinity:
+#    requiredDuringSchedulingIgnoredDuringExecution:
+#      labelSelector:
+#        matchLabels:
+#          app: "my-app"
+#  # Optional: define pod anti-affinity rules if needed
+#  podAntiAffinity: {}           
 
 ###############################################################################
 # Service, Ingress, and Gateway Configuration
