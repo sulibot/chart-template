@@ -77,7 +77,7 @@ spec:
           {{- end }}
           {{- if .Values.resources.enabled }}
           resources:
-            {{- if .Values.resources.requests }}
+            {{- if (omit .Values.resources.requests | "enabled")}}
             requests:
               {{ toYaml (omit .Values.resources.requests "enabled") | nindent 14 }}
             {{- end }}
