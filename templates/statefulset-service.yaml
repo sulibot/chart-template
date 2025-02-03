@@ -32,7 +32,7 @@ spec:
       {{- if .Values.dnsConfig.enabled | default false }}
       dnsConfig:
         options:
-          {{- toYaml (omit .Values.dnsConfig.options "enabled") | nindent 10 }}
+          {{- toYaml .Values.dnsConfig.options | nindent 10 }}
       {{- end }}
 
       {{- if .Values.podSecurityContext.enabled | default false }}
@@ -41,23 +41,18 @@ spec:
       {{- end }}
 
       affinity:
+        {{- if .Values.affinity.nodeAffinity }}
         nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: topology.kubernetes.io/host
-                    operator: In
-                    values:
-                      - pve01
-                      - pve02
-                      - pve03
-            {{- if .Values.affinity.nodeAffinity }}
-            {{- toYaml (omit .Values.affinity.nodeAffinity "enabled") | nindent 8 }}
-            {{- end }}
-      {{- if .Values.affinity.podAffinity }}
-      podAffinity:
-        {{ toYaml (omit .Values.affinity.podAffinity "enabled") | nindent 4 }}
-      {{- end }}
+          {{ toYaml .Values.affinity.nodeAffinity | nindent 10 }}
+        {{- end }}
+        {{- if .Values.affinity.podAffinity }}
+        podAffinity:
+          {{ toYaml .Values.affinity.podAffinity | nindent 10 }}
+        {{- end }}
+        {{- if .Values.affinity.podAntiAffinity }}
+        podAntiAffinity:
+          {{ toYaml .Values.affinity.podAntiAffinity | nindent 10 }}
+        {{- end }}
 
       containers:
         - name: "{{ include "chart-template.fullname" . }}"
