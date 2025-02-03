@@ -1,72 +1,57 @@
-# General application settings
+###############################################################################
+# General Application Settings
+###############################################################################
 name: app-name                  # Default application name
 namespace: media                # Namespace for the application
 
-# Docker container settings
+###############################################################################
+# Container/Image Settings
+###############################################################################
 image:
   repository: my-container-repo
   tag: latest                   # Image tag for the container
   pullPolicy: IfNotPresent      # Image pull policy
 
-# Replica settings
+###############################################################################
+# Replica and Port Configuration
+###############################################################################
 replicaCount: 1
 
-# Port configuration
 ports:
   servicePort: 80               # Port exposed by the service
   targetPort: 8080              # Target port in the container
 
-# Global networking options
-networking:
-  ipFamilyPolicy: PreferDualStack  # Can be PreferDualStack, RequireDualStack, or SingleStack
-  singleStackIPFamily: IPv4        # Default to IPv4 for single-stack clusters
-  
-# DNS configuration
+###############################################################################
+# Timezone
+###############################################################################
+timezone: "America/Los_Angeles"   # Default timezone for the application
+
+###############################################################################
+# DNS Settings
+###############################################################################
 dnsPolicy: ClusterFirst       # Default DNS policy
 dnsConfig:
-  enabled: false                # Enable or disable custom DNS settings
+  enabled: false                # Enable/disable custom DNS settings
   options:
     - name: ndots
       value: "1"
 
-# Config PVC settings
+###############################################################################
+# Persistent Volume Claims (PVCs)
+###############################################################################
 config:
-  enabled: false                # Enable or disable Config PVC
+  enabled: false                # Enable/disable Config PVC
   mountPath: /config            # Mount path for the Config PVC
   storageSize: 100Mi            # Default size for the Config PVC
 
-# Data PVC settings
 data:
-  enabled: true                 # Enable or disable Data PVC
+  enabled: true                 # Enable/disable Data PVC
   mountPath: /data              # Mount path for the Data PVC
   storageSize: 10Gi             # Size of the Data PVC
 
-#command:
-#  - "filebrowser"  # Overrides ENTRYPOINT
-#args:
-#  - "-r"
-#  - "/srv"
-#  - "-a"
-#  - "0.0.0.0"
-#  - "-p"
-#  - "8080"
-
-# Comment out section if not needed
-#volumeMountsExtras:
-#  - name: config
-#    mountPath: /filebrowser.db
-#    subPath: filebrowser.db
-#  - name: config
-#    mountPath: /settings.json
-#    subPath: settings.json              # Enable or disable additional volume mounts
-#  
-
-#volumesExtras:
-#  - name: config-volume
-#    configMap:
-#      name: filebrowser-config
-
-# Pod-level security context
+###############################################################################
+# Security Contexts
+###############################################################################
 podSecurityContext:
   enabled: true
   runAsUser: 1000
@@ -74,19 +59,21 @@ podSecurityContext:
   fsGroup: 1000
   fsGroupChangePolicy: OnRootMismatch
 
-# Container-level security context
 containerSecurityContext:
   enabled: true
   readOnlyRootFilesystem: false
   allowPrivilegeEscalation: false
+# Uncomment and adjust below if you need additional container capabilities
 #  config:
 #    capabilities:
 #      add:
 #        - SETGID
 
-# Resource limits and requests
+###############################################################################
+# Resource Limits and Requests
+###############################################################################
 resources:
-  enabled: false                # Enable or disable resource settings
+  enabled: false                # Enable/disable resource settings
   requests:
     memory: "256Mi"             # Memory request for the container
     cpu: "250m"                 # CPU request for the container
@@ -94,54 +81,82 @@ resources:
     memory: "512Mi"             # Memory limit for the container
     cpu: "500m"                 # CPU limit for the container
 
-# Tolerations and affinity
+###############################################################################
+# Global Networking Options
+###############################################################################
+networking:
+  ipFamilyPolicy: PreferDualStack  # Options: PreferDualStack, RequireDualStack, or SingleStack
+  singleStackIPFamily: IPv4        # Used only if ipFamilyPolicy is set to SingleStack
+
+###############################################################################
+# Tolerations and Affinity Rules
+###############################################################################
 tolerations: []                 # Define tolerations for node taints
 
 affinity:
-  enabled: false
+  enabled: true                 # Set to true to enable affinity rules; false to disable them entirely.
   nodeAffinity:
-    - matchExpressions:
-        - key: "intel.feature.node.kubernetes.io/gpu"
-          operator: In
-          values:
-            - "true"
-  
+    requiredDuringSchedulingIgnoredDuringExecution: {}  # Provide an empty object by default
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+            - key: topology.kubernetes.io/host
+              operator: In
+              values:
+                - pve01
+                - pve02
+                - pve03
+      - weight: 1
+        preference:
+          matchExpressions:
+            - key: intel.feature.node.kubernetes.io/gpu
+              operator: In
+              values:
+                - "true"
   podAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
       labelSelector:
         matchLabels:
           app: "my-app"
+  # Optional: define pod anti-affinity rules if needed
+  podAntiAffinity: {}           
 
+###############################################################################
+# Service, Ingress, and Gateway Configuration
+###############################################################################
 
-# Headless service configuration
+## Headless Service Configuration
 headless:
-  enabled: false                # Enable or disable headless service
+  enabled: false                # Enable headless service
+  # Optional: define a custom selector if needed:
+  # selector:
+  #   app: "custom-headless-selector"
 
-# Ingress configuration
+## Ingress Configuration
 ingress:
-  enabled: false                # Enable or disable Ingress
+  enabled: false                # Enable/disable Ingress
   className: cilium             # Ingress class name
   tls:
-    certManagerIssuer: letsencrypt-prod # Cert-manager issuer for TLS certificates
+    certManagerIssuer: letsencrypt-prod  # Cert-manager issuer for TLS certificates
 
-# Gateway configuration
+## Gateway Configuration (HTTPRoute)
 gateway:
-  enabled: false                # Enable or disable HTTPRoute
+  enabled: false                # Enable/disable HTTPRoute
   name: gateway-internal        # Name of the Gateway
   namespace: network            # Namespace of the Gateway
   domain: sulibot.com           # Default domain for hostnames
 
-
-# Environment variables
-env: []                         # Define additional environment variables
+###############################################################################
+# Additional Customization
+###############################################################################
+env: []                         # Additional environment variables
 # Example:
 # - name: ENV_VAR_1
 #   value: "value1"
 
-# Labels and Annotations
 labels:
   global: {}                    # Global labels applied to all resources
+
 annotations:
   pod: {}                       # Pod-level annotations
-
-                  # Define affinity and anti-affinity rules

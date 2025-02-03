@@ -29,3 +29,23 @@ Generate annotations for the application based on the values and resource type.
 {{- define "chart-template.annotations" -}}
 description: "Annotations for {{ .resourceType }}"
 {{- end }}
+
+{{/*
+Return the ipFamily block for a Service.
+Valid ipFamilyPolicy options are:
+  - PreferDualStack (default)
+  - RequireDualStack
+  - SingleStack (in which case, singleStackIPFamily is used)
+*/}}
+{{- define "chart-template.ipFamilies" -}}
+{{- $ipPolicy := default "PreferDualStack" .Values.networking.ipFamilyPolicy -}}
+ipFamilyPolicy: {{ $ipPolicy }}
+{{- if or (eq $ipPolicy "PreferDualStack") (eq $ipPolicy "RequireDualStack") -}}
+{{ "\n" }}ipFamilies:
+  - IPv4
+  - IPv6
+{{- else if eq $ipPolicy "SingleStack" -}}
+{{ "\n" }}ipFamilies:
+  - {{ .Values.networking.singleStackIPFamily | default "IPv4" }}
+{{- end -}}
+{{- end -}}
