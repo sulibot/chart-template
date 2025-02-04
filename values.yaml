@@ -70,8 +70,44 @@ containerSecurityContext:
 #        - SETGID
 
 ###############################################################################
+# # Probes for container health checks
+###############################################################################
+
+probes:
+  liveness:
+    enabled: false              # Enable/disable liveness probe to check if the app is running
+    path: /healthz             # Path to the liveness check endpoint
+    port: 8080                 # Port on which the app exposes the liveness endpoint
+    initialDelaySeconds: 10    # Delay before the first liveness probe is initiated
+    periodSeconds: 10          # Frequency of liveness checks
+    timeoutSeconds: 1          # Timeout for the liveness check
+    failureThreshold: 3        # Number of consecutive failures before the container is restarted
+    successThreshold: 1        # Minimum consecutive successes required to consider the container healthy
+
+  readiness:
+    enabled: false              # Enable/disable readiness probe to check if the app is ready to serve requests
+    path: /ready               # Path to the readiness check endpoint
+    port: 8080                 # Port on which the app exposes the readiness endpoint
+    initialDelaySeconds: 5     # Delay before the first readiness probe is initiated
+    periodSeconds: 10          # Frequency of readiness checks
+    timeoutSeconds: 1          # Timeout for the readiness check
+    failureThreshold: 3        # Number of consecutive failures before marking the container as unready
+    successThreshold: 1        # Minimum consecutive successes required to mark the container as ready
+
+  startup:
+    enabled: false             # Enable/disable startup probe to check if the app has started successfully
+    path: /startup             # Path to the startup check endpoint
+    port: 8080                 # Port on which the app exposes the startup endpoint
+    initialDelaySeconds: 0     # Delay before the first startup probe is initiated
+    periodSeconds: 10          # Frequency of startup checks
+    timeoutSeconds: 1          # Timeout for the startup check
+    failureThreshold: 30       # Number of consecutive failures before the container is restarted
+    successThreshold: 1        # Minimum consecutive successes required to consider startup successful
+
+###############################################################################
 # Resource Limits and Requests
 ###############################################################################
+
 resources:
   enabled: false                # Enable/disable resource settings
   requests:
