@@ -88,6 +88,14 @@ spec:
             {{ toYaml . | nindent 12 }}
             {{- end }}
 
+          {{- if .Values.envFrom }}
+          envFrom:
+            {{- with .Values.envFrom }}
+            {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+
+
           {{- if .Values.probes.liveness.enabled | default false }}
           livenessProbe:
             httpGet:

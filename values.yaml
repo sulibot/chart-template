@@ -191,6 +191,10 @@ env: []                         # Additional environment variables
 # - name: ENV_VAR_1
 #   value: "value1"
 
+envFrom:
+  - secretRef:
+      name: twenty-config-secret
+
 labels:
   global: {}                    # Global labels applied to all resources
 
