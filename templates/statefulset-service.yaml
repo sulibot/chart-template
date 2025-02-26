@@ -162,7 +162,7 @@ spec:
         {{- if .Values.data.enabled | default false }}
         - name: data
           persistentVolumeClaim:
-            claimName: "cephfs-pvc-media"  # Reference to dynamically mounted PVC
+            claimName: "cephfs-pvc-media"
         {{- end }}
         {{- if .Values.volumesExtras }}
         {{ toYaml .Values.volumesExtras | nindent 8 }}
