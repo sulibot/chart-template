@@ -40,7 +40,7 @@ dnsConfig:
 # Persistent Volume Claims (PVCs)
 ###############################################################################
 config:
-  enabled: false                # Enable/disable Config PVC
+  enabled: true                # Enable/disable Config PVC
   mountPath: /config            # Mount path for the Config PVC
   storageSize: 100Mi            # Default size for the Config PVC
 
@@ -178,7 +178,7 @@ ingress:
 
 ## Gateway Configuration (HTTPRoute)
 gateway:
-  enabled: false                # Enable/disable HTTPRoute
+  enabled: true                # Enable/disable HTTPRoute
   name: gateway-internal        # Name of the Gateway
   namespace: network            # Namespace of the Gateway
   domain: sulibot.com           # Default domain for hostnames
@@ -200,3 +200,13 @@ labels:
 
 annotations:
   pod: {}                       # Pod-level annotations
+
+#command:
+#  - "filebrowser"
+#args:
+#  - "-r"
+#  - "/srv"
+#  - "-a"
+#  - "0.0.0.0"
+#  - "-p"
+#  - "8080"
