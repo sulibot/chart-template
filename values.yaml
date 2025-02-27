@@ -20,6 +20,9 @@ replicaCount: 1
 ports:
   servicePort: 80               # Port exposed by the service
   targetPort: 8080              # Target port in the container
+  metricsPort: []             # Port for metrics
+  additionalPorts: []           # Additional ports
+  
 
 ###############################################################################
 # Timezone
@@ -186,7 +189,10 @@ gateway:
   name: gateway-internal        # Name of the Gateway
   namespace: network            # Namespace of the Gateway
   domain: sulibot.com           # Default domain for hostnames
-
+  additionalHostnames: []           # Additional hostnames
+  # - name1
+  # - name2
+  
 ###############################################################################
 # Additional Customization
 ###############################################################################

@@ -95,6 +95,16 @@ spec:
             {{- end }}
           {{- end }}
 
+          ports:
+            - name: http
+              containerPort: {{ .Values.ports.targetPort }}
+            {{- if .Values.ports.metricsPort }}
+            - name: metrics
+              containerPort: {{ .Values.ports.metricsPort }}
+            {{- end }}
+            {{- if .Values.ports.additionalPorts }}
+            {{ toYaml .Values.ports.additionalPorts | nindent 10 }}
+            {{- end }}
 
           {{- if .Values.probes.liveness.enabled | default false }}
           livenessProbe:
@@ -287,7 +297,10 @@ spec:
     - name: {{ .Values.gateway.name }}
       namespace: {{ .Values.gateway.namespace }}
   hostnames:
-    - {{ printf "%s.%s" (default "default-name" .Values.name) (default "sulibot.com" .Values.gateway.domain) }}
+    - {{ .Values.name }}.{{ .Values.gateway.domain }}
+    {{- range .Values.gateway.additionalHostnames }}
+    - {{ . }}.{{ $.Values.gateway.domain }}
+    {{- end }}
   rules:
     - matches:
         - path:
