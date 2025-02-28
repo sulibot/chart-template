@@ -1,36 +1,31 @@
-{{/* 
+{{/*
   chart-template/templates/statefulset-service.yaml
-  This template renders:
-    - A StatefulSet for the application,
-    - A Standard Service (if .Values.gateway.enabled or .Values.ingress.enabled),
-    - A Headless Service (if .Values.headless.enabled),
-    - An Ingress (if .Values.ingress.enabled),
-    - An HTTPRoute (if .Values.gateway.enabled).
 
-  Ports are defined in .Values.ports as an array of objects:
-    - name: Optional string
-    - targetPort: Required integer (the container port)
-    - servicePort: Optional integer (only if you want to expose that port via Service)
+  Renders (in order):
+    1) A StatefulSet for the application
+    2) A Standard Service (if .Values.gateway.enabled or .Values.ingress.enabled)
+    3) A Headless Service (if .Values.headless.enabled)
+    4) An Ingress (if .Values.ingress.enabled), updated to handle multiple hosts like HTTPRoute
+    5) An HTTPRoute (if .Values.gateway.enabled)
+
+  Ports are defined via .Values.ports, e.g.:
+  ports:
+    - name: web
+      targetPort: 3000
+      servicePort: 80
+    - name: admin
+      targetPort: 8080
+      servicePort: 8080
+    - targetPort: 9090  # no name => "port-2", no servicePort => not externally exposed
+
+  If no name is provided, we fallback to "port-<index>".
+  If servicePort is omitted, that port is not exposed externally (Service/Ingress/HTTPRoute).
 */}}
 
-{{- /*
-     Helper to get the first port object with servicePort defined.
-     We cannot use `where`, so we manually filter.
-*/ -}}
-{{- define "chart-template.firstServicePort" -}}
-{{- $servicePorts := list }}
-{{- range $.Values.ports }}
-  {{- if .servicePort }}
-    {{- $servicePorts = append $servicePorts . }}
-  {{- end }}
-{{- end }}
-{{- if gt (len $servicePorts) 0 }}
-{{- index $servicePorts 0 }}
-{{- end }}
-{{- end }}
-
+# ----------------------------------------------
+# 1) STATEFULSET
+# ----------------------------------------------
 ---
-# StatefulSet configuration
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -118,7 +113,7 @@ spec:
             {{- end }}
           {{- end }}
 
-          # Container ports from .Values.ports; require targetPort
+          # Container Ports (looping)
           ports:
             {{- range $index, $port := .Values.ports }}
             - name: {{ $port.name | default (printf "port-%d" $index) }}
@@ -219,9 +214,11 @@ spec:
         storageClassName: "{{ .Values.config.storageClassName | default "cephfs-csi-sc-retain" }}"
   {{- end }}
 
----
-# Standard Service
+# ----------------------------------------------
+# 2) STANDARD SERVICE
+# ----------------------------------------------
 {{- if or (.Values.gateway.enabled) (.Values.ingress.enabled) }}
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -235,20 +232,22 @@ spec:
   selector:
     app: "{{ include "chart-template.fullname" . }}"
   ports:
-    {{- range $index, $port := .Values.ports }}
-    {{- if $port.servicePort }}
-    - name: {{ $port.name | default (printf "port-%d" $index) }}
+    {{- range $index, $p := .Values.ports }}
+    {{- if $p.servicePort }}
+    - name: {{ $p.name | default (printf "port-%d" $index) }}
       protocol: TCP
-      port: {{ $port.servicePort }}
-      targetPort: {{ required (printf "Error: .Values.ports[%d].targetPort is required for service" $index) $port.targetPort }}
+      port: {{ $p.servicePort }}
+      targetPort: {{ required (printf "Error: .Values.ports[%d].targetPort is required for service" $index) $p.targetPort }}
     {{- end }}
     {{- end }}
   type: ClusterIP
 {{- end }}
 
----
-# Headless Service
+# ----------------------------------------------
+# 3) HEADLESS SERVICE
+# ----------------------------------------------
 {{- if .Values.headless.enabled }}
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -267,16 +266,18 @@ spec:
     app: "{{ include "chart-template.fullname" . }}"
     {{- end }}
   ports:
-    {{- range $index, $port := .Values.ports }}
-    - name: {{ $port.name | default (printf "port-%d" $index) }}
-      port: {{ $port.servicePort | default (required (printf "Error: .Values.ports[%d].targetPort is required for headless" $index) $port.targetPort) }}
-      targetPort: {{ required (printf "Error: .Values.ports[%d].targetPort is required for headless" $index) $port.targetPort }}
+    {{- range $index, $p := .Values.ports }}
+    - name: {{ $p.name | default (printf "port-%d" $index) }}
+      port: {{ $p.servicePort | default (required (printf "Error: .Values.ports[%d].targetPort is required for headless" $index) $p.targetPort) }}
+      targetPort: {{ required (printf "Error: .Values.ports[%d].targetPort is required for headless" $index) $p.targetPort }}
     {{- end }}
 {{- end }}
 
----
-# Ingress Configuration
+# ----------------------------------------------
+# 4) INGRESS (UPDATED)
+# ----------------------------------------------
 {{- if .Values.ingress.enabled }}
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -286,32 +287,51 @@ metadata:
     kubernetes.io/ingress.class: "{{ .Values.ingress.className }}"
     cert-manager.io/cluster-issuer: "{{ .Values.ingress.tls.certManagerIssuer }}"
 spec:
+  {{- /*
+      Build a list of all hosts:
+      1) The main host, e.g. "my-app.sulibot.com"
+      2) Each additional hostname appended with .Values.gateway.domain
+  */ -}}
+  {{- $mainHost := printf "%s.%s" .Values.name .Values.gateway.domain }}
+  {{- $allHosts := list $mainHost }}
+  {{- range .Values.gateway.additionalHostnames }}
+    {{- $h := printf "%s.%s" . $.Values.gateway.domain }}
+    {{- $allHosts = append $allHosts $h }}
+  {{- end }}
+
+  # TLS references all hosts with a single cert (assuming wildcard or SAN).
   tls:
     - hosts:
-        - "{{ printf "%s.%s" (include "chart-template.fullname" .) (default "sulibot.com" .Values.gateway.domain) }}"
+        {{- range $h := $allHosts }}
+        - {{ $h }}
+        {{- end }}
       secretName: "{{ include "chart-template.fullname" . }}-tls"
+
+  # Create a rule per host, mirroring HTTPRoute logic
   rules:
-    - host: "{{ printf "%s.%s" (include "chart-template.fullname" .) (default "sulibot.com" .Values.gateway.domain) }}"
+    {{- range $h := $allHosts }}
+    - host: {{ $h }}
       http:
         paths:
-          - path: /
+          {{- range $index, $p := .Values.ports }}
+          {{- if $p.servicePort }}
+          - path: /{{ $p.name | default (printf "port-%d" $index) }}
             pathType: Prefix
             backend:
               service:
                 name: "{{ include "chart-template.fullname" . }}-service"
                 port:
-                  number:
-                    {{- $first := include "chart-template.firstServicePort" . }}
-                    {{- if $first }}
-                    {{ $first.servicePort }}
-                    {{- else }}
-                    80
-                    {{- end }}
+                  number: {{ $p.servicePort }}
+          {{- end }}
+          {{- end }}
+    {{- end }}
 {{- end }}
 
----
-# HTTPRoute Configuration
+# ----------------------------------------------
+# 5) HTTPROUTE
+# ----------------------------------------------
 {{- if .Values.gateway.enabled }}
+---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -322,29 +342,35 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/version: {{ .Chart.AppVersion }}
     app.kubernetes.io/component: httproute
-  annotations: {}
 spec:
   parentRefs:
     - name: {{ .Values.gateway.name }}
       namespace: {{ .Values.gateway.namespace }}
+
+  # Build the same host list as above
+  {{- $mainHost := printf "%s.%s" .Values.name .Values.gateway.domain }}
+  {{- $allHosts := list $mainHost }}
+  {{- range .Values.gateway.additionalHostnames }}
+    {{- $h := printf "%s.%s" . $.Values.gateway.domain }}
+    {{- $allHosts = append $allHosts $h }}
+  {{- end }}
+
   hostnames:
-    - {{ .Values.name }}.{{ .Values.gateway.domain }}
-    {{- range .Values.gateway.additionalHostnames }}
-    - {{ . }}.{{ $.Values.gateway.domain }}
+    {{- range $h := $allHosts }}
+    - {{ $h }}
     {{- end }}
+
   rules:
+    {{- range $index, $p := .Values.ports }}
+    {{- if $p.servicePort }}
     - matches:
         - path:
             type: PathPrefix
-            value: /
+            value: /{{ $p.name | default (printf "port-%d" $index) }}
       backendRefs:
         - name: "{{ include "chart-template.fullname" . }}-service"
           namespace: "{{ .Values.namespace }}"
-          port:
-            {{- $first := include "chart-template.firstServicePort" . }}
-            {{- if $first }}
-            {{ $first.servicePort }}
-            {{- else }}
-            80
-            {{- end }}
+          port: {{ $p.servicePort }}
+    {{- end }}
+    {{- end }}
 {{- end }}
