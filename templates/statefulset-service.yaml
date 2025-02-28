@@ -44,10 +44,12 @@ spec:
         options:
           {{ toYaml .Values.dnsConfig.options | nindent 10 }}
       {{- end }}
+
       {{- if .Values.podSecurityContext.enabled | default false }}
       securityContext:
         {{ toYaml (omit .Values.podSecurityContext "enabled") | nindent 8 }}
       {{- end }}
+
       {{- if .Values.affinity.enabled }}
       affinity:
         {{- if .Values.affinity.nodeAffinity }}
@@ -141,10 +143,12 @@ spec:
             failureThreshold: {{ .Values.probes.startup.failureThreshold }}
             successThreshold: {{ .Values.probes.startup.successThreshold }}
           {{- end }}
+
           {{- if .Values.containerSecurityContext.enabled | default false }}
           securityContext:
             {{ toYaml (omit .Values.containerSecurityContext "enabled") | nindent 12 }}
           {{- end }}
+
           {{- if .Values.resources.enabled }}
           resources:
             {{- if (omit .Values.resources.requests "enabled") }}
@@ -156,6 +160,7 @@ spec:
               {{ toYaml (omit .Values.resources.limits "enabled") | nindent 14 }}
             {{- end }}
           {{- end }}
+
           volumeMounts:
             {{- if .Values.config.enabled | default false }}
             - name: config
@@ -168,11 +173,12 @@ spec:
             {{- if .Values.volumeMountsExtras }}
             {{ toYaml .Values.volumeMountsExtras | nindent 12 }}
             {{- end }}
+
       volumes:
         {{- if .Values.data.enabled | default false }}
         - name: data
           persistentVolumeClaim:
-            claimName: "cephfs-pvc-media"
+            claimName: "{{ .Values.data.claimName | default "cephfs-pvc-media" }}"
         {{- end }}
         {{- if .Values.volumesExtras }}
         {{ toYaml .Values.volumesExtras | nindent 8 }}
@@ -193,7 +199,7 @@ spec:
         resources:
           requests:
             storage: "{{ .Values.config.storageSize | default "100Mi" }}"
-        storageClassName: "cephfs-csi-sc-retain"
+        storageClassName: "{{ .Values.config.storageClassName | default "cephfs-csi-sc-retain" }}"
   {{- end }}
 
 ---

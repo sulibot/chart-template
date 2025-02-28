@@ -1,40 +1,46 @@
-###############################################################################
-# General Application Settings
-###############################################################################
-name: app-name                  # Default application name
-namespace: media                # Namespace for the application
+# values.yaml
+#
+# This file provides default configuration values for your Helm chart.
 
 ###############################################################################
-# Container/Image Settings
+# Release Name and Namespace
 ###############################################################################
+# Used in templates for naming resources and setting the deployment namespace.
+name: app-name
+namespace: media
+
+###############################################################################
+# Container Image Configuration
+###############################################################################
+# Configure the container repository, tag, and pull policy.
 image:
-  repository: my-container-repo
-  tag: latest                   # Image tag for the container
-  pullPolicy: IfNotPresent      # Image pull policy
+  repository: my-container-repo       # e.g., docker.io/library/nginx
+  tag: latest
+  pullPolicy: IfNotPresent
 
 ###############################################################################
-# Replica and Port Configuration
+# Application Replica and Ports
 ###############################################################################
 replicaCount: 1
 
+# Ports used by the container and Kubernetes Service.
 ports:
-  servicePort: 80               # Port exposed by the service
-  targetPort: 8080              # Target port in the container
-  metricsPort: []             # Port for metrics
-  additionalPorts: []           # Additional ports
-  
+  servicePort: 80             # The Service port inside the cluster
+  targetPort: 8080            # Container port
+  metricsPort: []             # (Optional) if your app exposes metrics
+  additionalPorts: []         # Additional ports to expose on the container
 
 ###############################################################################
 # Timezone
 ###############################################################################
-timezone: "America/Los_Angeles"   # Default timezone for the application
+timezone: "America/Los_Angeles"
 
 ###############################################################################
 # DNS Settings
 ###############################################################################
-dnsPolicy: ClusterFirst       # Default DNS policy
+dnsPolicy: ClusterFirst
 dnsConfig:
-  enabled: false                # Enable/disable custom DNS settings
+  enabled: false
   options:
     - name: ndots
       value: "1"
@@ -42,23 +48,29 @@ dnsConfig:
 ###############################################################################
 # Persistent Volume Claims (PVCs)
 ###############################################################################
+# Configure PVCs for config and data volumes. Storage classes and claim names
+# can be overridden here to match your environment.
 config:
-  enabled: true                # Enable/disable Config PVC
-  mountPath: /config            # Mount path for the Config PVC
-  storageSize: 100Mi            # Default size for the Config PVC
+  enabled: true
+  mountPath: /config
+  storageSize: 100Mi
+  storageClassName: "cephfs-csi-sc-retain"
 
 data:
-  enabled: true                 # Enable/disable Data PVC
-  mountPath: /data              # Mount path for the Data PVC
-  storageSize: 10Gi             # Size of the Data PVC
+  enabled: true
+  mountPath: /data
+  storageSize: 10Gi
+  claimName: "cephfs-pvc-media"
 
-volumeMountsExtras: []         # Additional volume mounts
-
-volumesExtras: []              # Additional volumes
+# Additional volume mounts or volumes can be specified below.
+volumeMountsExtras: []
+volumesExtras: []
 
 ###############################################################################
 # Security Contexts
 ###############################################################################
+# Control the user/group IDs and other security settings at the pod/container level.
+
 podSecurityContext:
   enabled: true
   runAsUser: 1000
@@ -70,76 +82,77 @@ containerSecurityContext:
   enabled: true
   readOnlyRootFilesystem: false
   allowPrivilegeEscalation: false
-# Uncomment and adjust below if you need additional container capabilities
-#  config:
-#    capabilities:
-#      add:
-#        - SETGID
+  # Uncomment and adjust if you need additional container capabilities:
+  # config:
+  #   capabilities:
+  #     add:
+  #       - SETGID
 
 ###############################################################################
-# # Probes for container health checks
+# Health Probes (Liveness, Readiness, Startup)
 ###############################################################################
-
 probes:
   liveness:
-    enabled: false              # Enable/disable liveness probe to check if the app is running
-    path: /healthz             # Path to the liveness check endpoint
-    port: 8080                 # Port on which the app exposes the liveness endpoint
-    initialDelaySeconds: 10    # Delay before the first liveness probe is initiated
-    periodSeconds: 10          # Frequency of liveness checks
-    timeoutSeconds: 1          # Timeout for the liveness check
-    failureThreshold: 3        # Number of consecutive failures before the container is restarted
-    successThreshold: 1        # Minimum consecutive successes required to consider the container healthy
+    enabled: false
+    path: /healthz
+    port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 3
+    successThreshold: 1
 
   readiness:
-    enabled: false              # Enable/disable readiness probe to check if the app is ready to serve requests
-    path: /ready               # Path to the readiness check endpoint
-    port: 8080                 # Port on which the app exposes the readiness endpoint
-    initialDelaySeconds: 5     # Delay before the first readiness probe is initiated
-    periodSeconds: 10          # Frequency of readiness checks
-    timeoutSeconds: 1          # Timeout for the readiness check
-    failureThreshold: 3        # Number of consecutive failures before marking the container as unready
-    successThreshold: 1        # Minimum consecutive successes required to mark the container as ready
+    enabled: false
+    path: /ready
+    port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 3
+    successThreshold: 1
 
   startup:
-    enabled: false             # Enable/disable startup probe to check if the app has started successfully
-    path: /startup             # Path to the startup check endpoint
-    port: 8080                 # Port on which the app exposes the startup endpoint
-    initialDelaySeconds: 0     # Delay before the first startup probe is initiated
-    periodSeconds: 10          # Frequency of startup checks
-    timeoutSeconds: 1          # Timeout for the startup check
-    failureThreshold: 30       # Number of consecutive failures before the container is restarted
-    successThreshold: 1        # Minimum consecutive successes required to consider startup successful
+    enabled: false
+    path: /startup
+    port: 8080
+    initialDelaySeconds: 0
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 30
+    successThreshold: 1
 
 ###############################################################################
-# Resource Limits and Requests
+# Resource Requests and Limits
 ###############################################################################
-
+# Enable this to set CPU/memory requests and limits for the container.
 resources:
-  enabled: false                # Enable/disable resource settings
+  enabled: false
   requests:
-    memory: "256Mi"             # Memory request for the container
-    cpu: "250m"                 # CPU request for the container
+    memory: "256Mi"
+    cpu: "250m"
   limits:
-    memory: "512Mi"             # Memory limit for the container
-    cpu: "500m"                 # CPU limit for the container
+    memory: "512Mi"
+    cpu: "500m"
 
 ###############################################################################
 # Global Networking Options
 ###############################################################################
+# ipFamilyPolicy can be PreferDualStack, RequireDualStack, or SingleStack.
+# If SingleStack is chosen, singleStackIPFamily is used.
 networking:
-  ipFamilyPolicy: PreferDualStack  # Options: PreferDualStack, RequireDualStack, or SingleStack
-  singleStackIPFamily: IPv4        # Used only if ipFamilyPolicy is set to SingleStack
+  ipFamilyPolicy: PreferDualStack
+  singleStackIPFamily: IPv4
 
 ###############################################################################
-# Tolerations and Affinity Rules
+# Scheduling: Tolerations and Affinity
 ###############################################################################
-tolerations: []                 # Define tolerations for node taints
+tolerations: []
 
 affinity:
-  enabled: true                 # Set to true to enable affinity rules; false to disable them entirely.
+  enabled: true
   nodeAffinity:
-#    requiredDuringSchedulingIgnoredDuringExecution: {}  # Provide an empty object by default
+    # requiredDuringSchedulingIgnoredDuringExecution: {}
     preferredDuringSchedulingIgnoredDuringExecution:
       - weight: 1
         preference:
@@ -157,66 +170,61 @@ affinity:
                 - pve01
                 - pve02
                 - pve03
-#  podAffinity:
-#    requiredDuringSchedulingIgnoredDuringExecution:
-#      labelSelector:
-#        matchLabels:
-#          app: "my-app"
-#  # Optional: define pod anti-affinity rules if needed
-#  podAntiAffinity: {}           
+  # Example for podAffinity/podAntiAffinity:
+  # podAffinity: {}
+  # podAntiAffinity: {}
 
 ###############################################################################
 # Service, Ingress, and Gateway Configuration
 ###############################################################################
-
-## Headless Service Configuration
 headless:
-  enabled: false                # Enable headless service
-  # Optional: define a custom selector if needed:
+  enabled: false
   # selector:
-  #   app: "custom-headless-selector"
+  #   app: "my-custom-headless-selector"
 
-## Ingress Configuration
 ingress:
-  enabled: false                # Enable/disable Ingress
-  className: cilium             # Ingress class name
+  enabled: false
+  className: cilium
   tls:
-    certManagerIssuer: letsencrypt-prod  # Cert-manager issuer for TLS certificates
+    certManagerIssuer: letsencrypt-prod
 
-## Gateway Configuration (HTTPRoute)
 gateway:
-  enabled: true                # Enable/disable HTTPRoute
-  name: gateway-internal        # Name of the Gateway
-  namespace: network            # Namespace of the Gateway
-  domain: sulibot.com           # Default domain for hostnames
-  additionalHostnames: []           # Additional hostnames
-  # - name1
-  # - name2
-  
+  enabled: true
+  name: gateway-internal
+  namespace: network
+  domain: sulibot.com
+  additionalHostnames: []
+  # e.g. ["secondary"]
+
 ###############################################################################
-# Additional Customization
+# Additional Environment Configuration
 ###############################################################################
-env: []                         # Additional environment variables
-# Example:
-# - name: ENV_VAR_1
-#   value: "value1"
+env: []
+  # - name: ENV_VAR_1
+  #   value: "value1"
 
 envFrom:
   - secretRef:
       name: twenty-config-secret
 
+###############################################################################
+# Additional Labels and Annotations
+###############################################################################
 labels:
-  global: {}                    # Global labels applied to all resources
+  global: {}
 
 annotations:
-  pod: {}                       # Pod-level annotations
+  pod: {}
 
-#command:
-#  - "filebrowser"
-#args:
-#  - "-r"
-#  - "/srv"
-#  - "-a"
-#  - "0.0.0.0"
-#  - "-p"
-#  - "8080"
+###############################################################################
+# Optional Custom Commands and Arguments
+###############################################################################
+# command:
+#   - "filebrowser"
+# args:
+#   - "-r"
+#   - "/srv"
+#   - "-a"
+#   - "0.0.0.0"
+#   - "-p"
+#   - "8080"
