@@ -9,7 +9,6 @@
     5) An HTTPRoute (if .Values.gateway.enabled)
 
   Ports are defined via .Values.ports, e.g.:
-  ports:
     - name: web
       targetPort: 3000
       servicePort: 80
@@ -113,7 +112,9 @@ spec:
             {{- end }}
           {{- end }}
 
-          # Container Ports (looping)
+          # Container Ports (array-based). 
+          # If .Values.ports is an array, we loop over it.
+          # If you only have single ports, adapt as needed.
           ports:
             {{- range $index, $port := .Values.ports }}
             - name: {{ $port.name | default (printf "port-%d" $index) }}
@@ -289,7 +290,7 @@ metadata:
 spec:
   {{- /*
       Build a list of all hosts:
-      1) The main host, e.g. "my-app.sulibot.com"
+      1) The main host: e.g. "my-app.sulibot.com"
       2) Each additional hostname appended with .Values.gateway.domain
   */ -}}
   {{- $mainHost := printf "%s.%s" .Values.name .Values.gateway.domain }}
@@ -299,7 +300,7 @@ spec:
     {{- $allHosts = append $allHosts $h }}
   {{- end }}
 
-  # TLS references all hosts with a single cert (assuming wildcard or SAN).
+  # TLS references all hosts with a single cert (assuming wildcard or multi-SAN).
   tls:
     - hosts:
         {{- range $h := $allHosts }}
