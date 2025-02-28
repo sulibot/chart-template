@@ -1,9 +1,9 @@
 {{/*
-Generate the full name of the application based on the release name and chart name,
-with a fallback if .Release is not populated.
+Generate the full name of the application based on the release name,
+falling back if .Release is not populated.
 */}}
 {{- define "chart-template.fullname" -}}
-{{- if .Release.Name }}
+{{- if and .Release .Release.Name }}
 {{ .Release.Name | trunc 63 | trimSuffix "-" }}
 {{- else }}
 chart-template
@@ -22,10 +22,10 @@ Generate labels for the application based on the values and resource type.
 */}}
 {{- define "chart-template.labels" -}}
 app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
-app.kubernetes.io/instance: "{{ if .Release.Name }}{{ .Release.Name }}{{ else }}chart-template{{ end }}"
+app.kubernetes.io/instance: "{{ if and .Release .Release.Name }}{{ .Release.Name }}{{ else }}chart-template{{ end }}"
 app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
 app.kubernetes.io/component: "{{ .resourceType | default "component" }}"
-app.kubernetes.io/managed-by: "{{ if .Release.Service }}{{ .Release.Service }}{{ else }}Helm{{ end }}"
+app.kubernetes.io/managed-by: "{{ if and .Release .Release.Service }}{{ .Release.Service }}{{ else }}Helm{{ end }}"
 {{- end }}
 
 {{/*
