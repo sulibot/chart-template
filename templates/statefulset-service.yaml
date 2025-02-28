@@ -14,14 +14,19 @@
 */}}
 
 {{- /*
-     Optional helper: returns the first port that has a servicePort,
-     for references in Ingress/HTTPRoute.
+     Helper to get the first port object with servicePort defined.
+     We cannot use `where`, so we manually filter.
 */ -}}
 {{- define "chart-template.firstServicePort" -}}
-{{- $servicePorts := where $.Values.ports "servicePort" "!=" nil }}
-{{- if gt (len $servicePorts) 0 -}}
-{{- index $servicePorts 0 -}}
-{{- end -}}
+{{- $servicePorts := list }}
+{{- range $.Values.ports }}
+  {{- if .servicePort }}
+    {{- $servicePorts = append $servicePorts . }}
+  {{- end }}
+{{- end }}
+{{- if gt (len $servicePorts) 0 }}
+{{- index $servicePorts 0 }}
+{{- end }}
 {{- end }}
 
 ---
