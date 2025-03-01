@@ -1,37 +1,60 @@
+{{/*
+Generate the full name of the application based on the release name.
+If a release is present, use its name (truncated and cleaned) – otherwise, fall back to a fixed default.
+*/}}
 {{- define "chart-template.fullname" -}}
 {{- if and .Release .Release.Name -}}
-  {{ .Release.Name | trunc 63 | trimSuffix "-" | trim -}}
+  {{ .Release.Name | trunc 63 | trimSuffix "-" | trim }}
 {{- else -}}
   chart-template
 {{- end -}}
 {{- end }}
 
+{{/*
+Generate the chart name.
+This checks if .Chart is available; if not, returns a default.
+*/}}
 {{- define "chart-template.name" -}}
-{{ .Chart.Name | default "unknown-chart" | trim -}}
+{{- if .Chart -}}
+  {{ .Chart.Name | default "unknown-chart" | trim }}
+{{- else -}}
+  unknown-chart
+{{- end -}}
 {{- end }}
 
+{{/*
+Generate a standard set of labels.
+These labels include the chart name, release name, version, and a Helm identifier.
+*/}}
 {{- define "chart-template.labels" -}}
-app.kubernetes.io/name: "{{ include "chart-template.name" $ }}"
-app.kubernetes.io/instance: "{{ if and $.Release $.Release.Name }}{{ $.Release.Name | default "chart-template" | trim -}}{{ else }}chart-template{{ end }}"
-app.kubernetes.io/version: "{{ $.Chart.AppVersion }}"
-app.kubernetes.io/component: "{{ $.resourceType | default "component" }}"
-app.kubernetes.io/managed-by: "{{ if $.Release }}{{ $.Release.Service | default "Helm" | trim -}}{{ else }}Helm{{ end }}"
+app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
+app.kubernetes.io/instance: "{{ .Release.Name }}"
+app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
+app.kubernetes.io/managed-by: "Helm"
+helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 {{- end }}
 
+{{/*
+Generate standard annotations for the application.
+*/}}
 {{- define "chart-template.annotations" -}}
-description: "Annotations for {{ $.resourceType }}"
+description: "Managed by Helm"
 {{- end }}
 
+{{/*
+Generate the ipFamilies block for Services.
+The ipFamilyPolicy is set from .Values.networking.ipFamilyPolicy (defaulting to PreferDualStack).
+If SingleStack is chosen, the singleStackIPFamily is used.
+*/}}
 {{- define "chart-template.ipFamilies" -}}
-{{- $ipPolicy := default "PreferDualStack" $.Values.networking.ipFamilyPolicy -}}
-ipFamilyPolicy: {{ $ipPolicy | quote }}
-{{ "\n" -}}
+{{- $ipPolicy := default "PreferDualStack" .Values.networking.ipFamilyPolicy -}}
+ipFamilyPolicy: {{ $ipPolicy }}
 {{- if or (eq $ipPolicy "PreferDualStack") (eq $ipPolicy "RequireDualStack") -}}
 ipFamilies:
   - IPv4
   - IPv6
 {{- else if eq $ipPolicy "SingleStack" -}}
 ipFamilies:
-  - {{ $.Values.networking.singleStackIPFamily | default "IPv4" }}
+  - {{ .Values.networking.singleStackIPFamily | default "IPv4" }}
 {{- end -}}
 {{- end }}
