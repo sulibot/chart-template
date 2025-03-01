@@ -1,29 +1,38 @@
 {{/*
   chart-template/templates/statefulset-service.yaml
 
-  Renders (in order):
+  This template renders (in order):
     1) A StatefulSet for the application
     2) A Standard Service (if .Values.gateway.enabled or .Values.ingress.enabled)
     3) A Headless Service (if .Values.headless.enabled)
-    4) An Ingress (if .Values.ingress.enabled), updated to handle multiple hosts like HTTPRoute
-    5) An HTTPRoute (if .Values.gateway.enabled)
-
-  Ports are defined via .Values.ports, e.g.:
+    4) An Ingress (if .Values.ingress.enabled)
+    5) Gateway API routes based on the defined ports:
+         - HTTPRoute for ports with protocol HTTP (default)
+         - TCPRoute for ports with protocol TCP
+         - UDPRoute for ports with protocol UDP
+  
+  Ports are defined in your values file like this:
+  
+  ports:
     - name: web
-      targetPort: 3000
       servicePort: 80
+      targetPort: 3000
+      # protocol is omitted → defaults to HTTP
     - name: admin
-      targetPort: 8080
-      servicePort: 8080
-    - targetPort: 9090  # no name => "port-<index>", no servicePort => not externally exposed
-
-  If no name is provided, we fallback to "port-<index>".
-  If servicePort is omitted, that port is not exposed externally (Service/Ingress/HTTPRoute).
+      servicePort: 8443
+      targetPort: 8443
+      protocol: UDP
+    - name: stream
+      servicePort: 9443
+      targetPort: 9443
+      protocol: TCP
+  
+  For any port entry missing a protocol, HTTP is assumed.
 */}}
 
-# ----------------------------------------------
-# 1) STATEFULSET
-# ----------------------------------------------
+{{/* ----------------------------------------------
+       1) STATEFULSET
+   ---------------------------------------------- */}}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -60,12 +69,10 @@ spec:
         options:
           {{ toYaml .Values.dnsConfig.options | nindent 10 }}
       {{- end }}
-
       {{- if .Values.podSecurityContext.enabled }}
       securityContext:
         {{ toYaml (omit .Values.podSecurityContext "enabled") | nindent 8 }}
       {{- end }}
-
       {{- if .Values.affinity.enabled }}
       affinity:
         {{- if .Values.affinity.nodeAffinity }}
@@ -88,7 +95,6 @@ spec:
           {{ toYaml .Values.affinity.podAntiAffinity | nindent 10 }}
         {{- end }}
       {{- end }}
-
       containers:
         - name: "{{ include "chart-template.fullname" . }}"
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -111,14 +117,11 @@ spec:
             {{ toYaml . | nindent 12 }}
             {{- end }}
           {{- end }}
-
-          # Container Ports (looping over .Values.ports)
           ports:
             {{- range $index, $port := .Values.ports }}
             - name: {{ $port.name | default (printf "port-%d" $index) }}
               containerPort: {{ required (printf "Error: .Values.ports[%d].targetPort is required" $index) $port.targetPort }}
             {{- end }}
-
           {{- if .Values.probes.liveness.enabled }}
           livenessProbe:
             httpGet:
@@ -130,7 +133,6 @@ spec:
             failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
             successThreshold: {{ .Values.probes.liveness.successThreshold }}
           {{- end }}
-
           {{- if .Values.probes.readiness.enabled }}
           readinessProbe:
             httpGet:
@@ -142,7 +144,6 @@ spec:
             failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
             successThreshold: {{ .Values.probes.readiness.successThreshold }}
           {{- end }}
-
           {{- if .Values.probes.startup.enabled }}
           startupProbe:
             httpGet:
@@ -154,12 +155,10 @@ spec:
             failureThreshold: {{ .Values.probes.startup.failureThreshold }}
             successThreshold: {{ .Values.probes.startup.successThreshold }}
           {{- end }}
-
           {{- if .Values.containerSecurityContext.enabled }}
           securityContext:
             {{ toYaml (omit .Values.containerSecurityContext "enabled") | nindent 12 }}
           {{- end }}
-
           {{- if .Values.resources.enabled }}
           resources:
             {{- if (omit .Values.resources.requests "enabled") }}
@@ -171,7 +170,6 @@ spec:
               {{ toYaml (omit .Values.resources.limits "enabled") | nindent 14 }}
             {{- end }}
           {{- end }}
-
           volumeMounts:
             {{- if .Values.config.enabled }}
             - name: config
@@ -184,7 +182,6 @@ spec:
             {{- if .Values.volumeMountsExtras }}
             {{ toYaml .Values.volumeMountsExtras | nindent 12 }}
             {{- end }}
-
       volumes:
         {{- if .Values.data.enabled }}
         - name: data
@@ -213,9 +210,9 @@ spec:
         storageClassName: "{{ .Values.config.storageClassName | default "cephfs-csi-sc-retain" }}"
   {{- end }}
 
-# ----------------------------------------------
-# 2) STANDARD SERVICE
-# ----------------------------------------------
+{{/* ----------------------------------------------
+       2) STANDARD SERVICE
+   ---------------------------------------------- */}}
 {{- if or (.Values.gateway.enabled) (.Values.ingress.enabled) }}
 ---
 apiVersion: v1
@@ -234,17 +231,17 @@ spec:
     {{- range $index, $p := .Values.ports }}
     {{- if $p.servicePort }}
     - name: {{ $p.name | default (printf "port-%d" $index) }}
-      protocol: TCP
+      protocol: {{ $p.protocol | default "HTTP" | upper | regexReplaceAll "HTTP" "TCP" | quote }}
       port: {{ $p.servicePort }}
-      targetPort: {{ required (printf "Error: .Values.ports[%d].targetPort is required for service" $index) $p.targetPort }}
+      targetPort: {{ $p.targetPort }}
     {{- end }}
     {{- end }}
   type: ClusterIP
 {{- end }}
 
-# ----------------------------------------------
-# 3) HEADLESS SERVICE
-# ----------------------------------------------
+{{/* ----------------------------------------------
+       3) HEADLESS SERVICE (if enabled)
+   ---------------------------------------------- */}}
 {{- if .Values.headless.enabled }}
 ---
 apiVersion: v1
@@ -272,9 +269,9 @@ spec:
     {{- end }}
 {{- end }}
 
-# ----------------------------------------------
-# 4) INGRESS (UPDATED)
-# ----------------------------------------------
+{{/* ----------------------------------------------
+       4) INGRESS (if enabled)
+   ---------------------------------------------- */}}
 {{- if .Values.ingress.enabled }}
 ---
 apiVersion: networking.k8s.io/v1
@@ -286,7 +283,6 @@ metadata:
     kubernetes.io/ingress.class: "{{ .Values.ingress.className }}"
     cert-manager.io/cluster-issuer: "{{ .Values.ingress.tls.certManagerIssuer }}"
 spec:
-  {{- /* Build a list of all hosts: main host and additional ones */ -}}
   {{- $mainHost := printf "%s.%s" .Values.name .Values.gateway.domain }}
   {{- $allHosts := list $mainHost }}
   {{- range .Values.gateway.additionalHostnames }}
@@ -318,47 +314,116 @@ spec:
     {{- end }}
 {{- end }}
 
-# ----------------------------------------------
-# 5) HTTPROUTE
-# ----------------------------------------------
-{{- if $.Values.gateway.enabled }}
+{{/* ----------------------------------------------
+       5) GATEWAY API ROUTES
+         (HTTPRoute, TCPRoute, UDPRoute based on port protocol)
+   ---------------------------------------------- */}}
+
+{{- $ports := .Values.ports | default (list) -}}
+{{- $httpPorts := list -}}
+{{- $tcpPorts := list -}}
+{{- $udpPorts := list -}}
+{{- range $index, $p := $ports }}
+  {{- $proto := $p.protocol | default "HTTP" | upper -}}
+  {{- if eq $proto "HTTP" }}
+    {{- $httpPorts = append $httpPorts $p -}}
+  {{- else if eq $proto "TCP" }}
+    {{- $tcpPorts = append $tcpPorts $p -}}
+  {{- else if eq $proto "UDP" }}
+    {{- $udpPorts = append $udpPorts $p -}}
+  {{- else }}
+    {{- $httpPorts = append $httpPorts $p -}}
+  {{- end }}
+{{- end }}
+
+{{/* 5a) HTTPRoute for HTTP ports */}}
+{{- if gt (len $httpPorts) 0 }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: "{{ include "chart-template.fullname" $ }}-route"
-  namespace: {{ $.Values.gateway.namespace }}
+  name: "{{ include "chart-template.fullname" . }}-httproute"
+#  namespace: {{ $.Values.gateway.namespace }}
+  namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
   labels:
-    app.kubernetes.io/name: "{{ include "chart-template.name" $ }}"
-    app.kubernetes.io/instance: "{{ $.Release.Name }}"
-    app.kubernetes.io/version: "{{ $.Chart.AppVersion }}"
-    app.kubernetes.io/component: httproute
+    app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
+    app.kubernetes.io/component: "httproute"
 spec:
   parentRefs:
     - name: {{ $.Values.gateway.name }}
       namespace: {{ $.Values.gateway.namespace }}
-  {{- /* Build the host list: main host plus any additional hostnames */ -}}
-  {{- $mainHost := printf "%s.%s" $.Values.name $.Values.gateway.domain }}
-  {{- $allHosts := list $mainHost }}
-  {{- range $.Values.gateway.additionalHostnames }}
-    {{- $h := printf "%s.%s" . $.Values.gateway.domain }}
-    {{- $allHosts = append $allHosts $h }}
-  {{- end }}
   hostnames:
-    {{- range $h := $allHosts }}
-    - {{ $h }}
+    - {{ printf "%s.%s" $.Values.name $.Values.gateway.domain }}
+    {{- range $.Values.gateway.additionalHostnames }}
+    - {{ printf "%s.%s" . $.Values.gateway.domain }}
     {{- end }}
   rules:
-    {{- range $index, $p := $.Values.ports }}
-    {{- if $p.servicePort }}
+    {{- range $index, $p := $httpPorts }}
     - matches:
         - path:
             type: PathPrefix
-            value: {{ if eq (int $p.servicePort) 80 }}"/"{{ else }}{{ printf "/%s" ($p.name | default (printf "port-%d" $index)) | quote }}{{ end }}
+            value: {{ if eq (int $p.servicePort) 80 }}"/"{{ else }}{{ printf "/%s" ($p.name | default (printf "port-%d" $index)) }}{{ end }}
       backendRefs:
+        - name: "{{ include "chart-template.fullname" . }}-service"
+          namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
+          port: {{ $p.servicePort }}
+    {{- end }}
+{{- end }}
+
+{{/* 5b) TCPRoute for TCP ports */}}
+{{- if gt (len $tcpPorts) 0 }}
+{{- range $index, $p := $tcpPorts }}
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: "{{ include "chart-template.fullname" $ }}-tcp-{{ $p.name | default (printf "port-%d" $index) }}"
+#  namespace: {{ $.Values.gateway.namespace }}
+  namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
+  labels:
+    app.kubernetes.io/name: "{{ include "chart-template.name" $ }}"
+    app.kubernetes.io/instance: "{{ $.Release.Name }}"
+spec:
+  parentRefs:
+    - name: {{ $.Values.gateway.name }}
+      namespace: {{ $.Values.gateway.namespace }}
+      {{- if $p.listenerName }}
+      sectionName: {{ $p.listenerName }}
+      {{- end }}
+  rules:
+    - backendRefs:
         - name: "{{ include "chart-template.fullname" $ }}-service"
           namespace: "{{ if $.Release }}{{ $.Release.Namespace | default "default" }}{{ else }}default{{ end }}"
           port: {{ $p.servicePort }}
-    {{- end }}
-    {{- end }}
+{{- end }}
+{{- end }}
+
+{{/* 5c) UDPRoute for UDP ports */}}
+{{- if gt (len $udpPorts) 0 }}
+{{- range $index, $p := $udpPorts }}
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: UDPRoute
+metadata:
+  name: "{{ include "chart-template.fullname" $ }}-udp-{{ $p.name | default (printf "port-%d" $index) }}"
+#  namespace: {{ $.Values.gateway.namespace }}
+  namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
+  labels:
+    app.kubernetes.io/name: "{{ include "chart-template.name" $ }}"
+    app.kubernetes.io/instance: "{{ $.Release.Name }}"
+spec:
+  parentRefs:
+    - name: {{ $.Values.gateway.name }}
+      namespace: {{ $.Values.gateway.namespace }}
+      {{- if $p.listenerName }}
+      sectionName: {{ $p.listenerName }}
+      {{- end }}
+  rules:
+    - backendRefs:
+        - name: "{{ include "chart-template.fullname" $ }}-service"
+          namespace: "{{ if $.Release }}{{ $.Release.Namespace | default "default" }}{{ else }}default{{ end }}"
+          port: {{ $p.servicePort }}
+{{- end }}
 {{- end }}
