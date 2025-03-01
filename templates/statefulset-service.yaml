@@ -15,7 +15,7 @@
     - name: admin
       targetPort: 8080
       servicePort: 8080
-    - targetPort: 9090  # no name => "port-2", no servicePort => not externally exposed
+    - targetPort: 9090  # no name => "port-<index>", no servicePort => not externally exposed
 
   If no name is provided, we fallback to "port-<index>".
   If servicePort is omitted, that port is not exposed externally (Service/Ingress/HTTPRoute).
@@ -29,7 +29,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: "{{ include "chart-template.fullname" . }}"
-  namespace: "{{ .Values.namespace }}"
+  namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
   labels:
     app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
     app.kubernetes.io/instance: "{{ .Release.Name }}"
@@ -112,9 +112,7 @@ spec:
             {{- end }}
           {{- end }}
 
-          # Container Ports (array-based). 
-          # If .Values.ports is an array, we loop over it.
-          # If you only have single ports, adapt as needed.
+          # Container Ports (looping over .Values.ports)
           ports:
             {{- range $index, $port := .Values.ports }}
             - name: {{ $port.name | default (printf "port-%d" $index) }}
@@ -224,7 +222,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: "{{ include "chart-template.fullname" . }}-service"
-  namespace: "{{ .Values.namespace }}"
+  namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
   labels:
     app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
     app.kubernetes.io/instance: "{{ .Release.Name }}"
@@ -253,7 +251,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: "{{ include "chart-template.fullname" . }}-headless"
-  namespace: "{{ .Values.namespace }}"
+  namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
   labels:
     app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
     app.kubernetes.io/instance: "{{ .Release.Name }}"
@@ -283,32 +281,24 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: "{{ include "chart-template.fullname" . }}-ingress"
-  namespace: "{{ .Values.namespace }}"
+  namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
   annotations:
     kubernetes.io/ingress.class: "{{ .Values.ingress.className }}"
     cert-manager.io/cluster-issuer: "{{ .Values.ingress.tls.certManagerIssuer }}"
 spec:
-  {{- /*
-      Build a list of all hosts:
-      1) The main host: e.g. "my-app.sulibot.com"
-      2) Each additional hostname appended with .Values.gateway.domain
-  */ -}}
+  {{- /* Build a list of all hosts: main host and additional ones */ -}}
   {{- $mainHost := printf "%s.%s" .Values.name .Values.gateway.domain }}
   {{- $allHosts := list $mainHost }}
   {{- range .Values.gateway.additionalHostnames }}
     {{- $h := printf "%s.%s" . $.Values.gateway.domain }}
     {{- $allHosts = append $allHosts $h }}
   {{- end }}
-
-  # TLS references all hosts with a single cert (assuming wildcard or multi-SAN).
   tls:
     - hosts:
         {{- range $h := $allHosts }}
         - {{ $h }}
         {{- end }}
       secretName: "{{ include "chart-template.fullname" . }}-tls"
-
-  # Create a rule per host, mirroring HTTPRoute logic
   rules:
     {{- range $h := $allHosts }}
     - host: {{ $h }}
@@ -331,46 +321,43 @@ spec:
 # ----------------------------------------------
 # 5) HTTPROUTE
 # ----------------------------------------------
-{{- if .Values.gateway.enabled }}
+{{- if $.Values.gateway.enabled }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: {{ include "chart-template.fullname" . }}-route
-  namespace: {{ .Values.gateway.namespace }}
+  name: "{{ include "chart-template.fullname" $ }}-route"
+  namespace: {{ $.Values.gateway.namespace }}
   labels:
-    app.kubernetes.io/name: {{ include "chart-template.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    app.kubernetes.io/name: "{{ include "chart-template.name" $ }}"
+    app.kubernetes.io/instance: "{{ $.Release.Name }}"
+    app.kubernetes.io/version: "{{ $.Chart.AppVersion }}"
     app.kubernetes.io/component: httproute
 spec:
   parentRefs:
-    - name: {{ .Values.gateway.name }}
-      namespace: {{ .Values.gateway.namespace }}
-
-  # Build the same host list as above
-  {{- $mainHost := printf "%s.%s" .Values.name .Values.gateway.domain }}
+    - name: {{ $.Values.gateway.name }}
+      namespace: {{ $.Values.gateway.namespace }}
+  {{- /* Build the host list: main host plus any additional hostnames */ -}}
+  {{- $mainHost := printf "%s.%s" $.Values.name $.Values.gateway.domain }}
   {{- $allHosts := list $mainHost }}
-  {{- range .Values.gateway.additionalHostnames }}
+  {{- range $.Values.gateway.additionalHostnames }}
     {{- $h := printf "%s.%s" . $.Values.gateway.domain }}
     {{- $allHosts = append $allHosts $h }}
   {{- end }}
-
   hostnames:
     {{- range $h := $allHosts }}
     - {{ $h }}
     {{- end }}
-
   rules:
-    {{- range $index, $p := .Values.ports }}
+    {{- range $index, $p := $.Values.ports }}
     {{- if $p.servicePort }}
     - matches:
         - path:
             type: PathPrefix
-            value: /{{ $p.name | default (printf "port-%d" $index) }}
+            value: {{ if eq (int $p.servicePort) 80 }}"/"{{ else }}{{ printf "/%s" ($p.name | default (printf "port-%d" $index)) | quote }}{{ end }}
       backendRefs:
-        - name: "{{ include "chart-template.fullname" . }}-service"
-          namespace: "{{ .Values.namespace }}"
+        - name: "{{ include "chart-template.fullname" $ }}-service"
+          namespace: "{{ if $.Release }}{{ $.Release.Namespace | default "default" }}{{ else }}default{{ end }}"
           port: {{ $p.servicePort }}
     {{- end }}
     {{- end }}
