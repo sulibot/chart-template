@@ -1,47 +1,41 @@
 {{- /* 
-chart-template/templates/statefulset-service.yaml
+Statefulset-Service Template
 
-This template renders (in order):
-  1) A StatefulSet for the application
-  2) A Standard Service (if .Values.gateway.enabled or .Values.ingress.enabled)
-  3) A Headless Service (if .Values.headless.enabled)
-  4) An Ingress (if .Values.ingress.enabled)
-  5) Gateway API routes (HTTPRoute/TCPRoute/UDPRoute) if .Values.gateway.enabled
+This template renders:
+1) A StatefulSet for the application.
+2) A Standard Service (if .Values.gateway.enabled or .Values.ingress.enabled).
+3) A Headless Service (if .Values.headless.enabled).
+4) An Ingress (if .Values.ingress.enabled).
+5) Gateway API routes (HTTPRoute/TCPRoute/UDPRoute) if .Values.gateway.enabled.
 
-Ports are defined in .Values.ports, for example:
+Ports Configuration:
+Ports are defined in `.Values.ports`. For example:
   - name: web
-    targetPort: 3000
-    servicePort: 80
-    protocol: HTTP   # Defaults to HTTP if omitted.
+    targetPort: 3000       # Container port.
+    servicePort: 80        # Port exposed by the Service.
+    protocol: HTTP         # Defaults to HTTP if omitted.
+    sectionName: web-listener   # (Optional) target a specific Gateway listener.
   - name: admin
     targetPort: 8443
     servicePort: 8443
     protocol: UDP
+    sectionName: admin-listener
   - name: stream
     targetPort: 9443
     servicePort: 9443
     protocol: TCP
 
-If no name is provided, the port name will default to "port-<index>".
+If no port name is provided, a default of "port-<index>" is generated.
 If servicePort is omitted, that port is not exposed externally.
 */ -}}
-
-{{/* -------------------------------
-      1) STATEFULSET
-   ------------------------------- */}}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: "{{ include "chart-template.fullname" . }}"
-  namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
+  namespace: "{{ include "chart-template.namespace" . }}"
   labels:
-    app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
-    app.kubernetes.io/instance: "{{ if .Release }}{{ .Release.Name }}{{ else }}chart-template{{ end }}"
-    app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
-    app.kubernetes.io/component: "statefulset"
-    app.kubernetes.io/managed-by: "Helm"
-    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    {{- include "chart-template.labels" . | nindent 4 }}
     {{- with (default dict .Values.labels.global) }}
     {{ toYaml . | nindent 4 }}
     {{- end }}
@@ -54,8 +48,7 @@ spec:
     metadata:
       labels:
         app: "{{ include "chart-template.fullname" . }}"
-        app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
-        app.kubernetes.io/instance: "{{ if .Release }}{{ .Release.Name }}{{ else }}chart-template{{ end }}"
+        {{- include "chart-template.labels" . | nindent 8 }}
       annotations:
         {{- with (default dict .Values.annotations.pod) }}
         {{ toYaml . | nindent 8 }}
@@ -207,22 +200,20 @@ spec:
             storage: "{{ .Values.config.storageSize | default "100Mi" }}"
         storageClassName: "{{ .Values.config.storageClassName | default "cephfs-csi-sc-retain" }}"
   {{- end }}
-
+---
 {{/* -------------------------------
-      2) STANDARD SERVICE
+      2) STANDARD SERVICE (if enabled)
    ------------------------------- */}}
 {{- if or (.Values.gateway.enabled) (.Values.ingress.enabled) }}
----
 apiVersion: v1
 kind: Service
 metadata:
   name: "{{ include "chart-template.fullname" . }}-service"
-  namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
+  namespace: "{{ include "chart-template.namespace" . }}"
   labels:
-    app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
-    app.kubernetes.io/instance: "{{ if .Release }}{{ .Release.Name }}{{ else }}chart-template{{ end }}"
-    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    {{- include "chart-template.labels" . | nindent 4 }}
 spec:
+  type: ClusterIP
   {{ include "chart-template.ipFamilies" . | nindent 2 }}
   selector:
     app: "{{ include "chart-template.fullname" . }}"
@@ -235,22 +226,19 @@ spec:
       targetPort: {{ $p.targetPort }}
     {{- end }}
     {{- end }}
-  type: ClusterIP
 {{- end }}
-
+---
 {{/* -------------------------------
       3) HEADLESS SERVICE (if enabled)
    ------------------------------- */}}
 {{- if .Values.headless.enabled }}
----
 apiVersion: v1
 kind: Service
 metadata:
   name: "{{ include "chart-template.fullname" . }}-headless"
-  namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
+  namespace: "{{ include "chart-template.namespace" . }}"
   labels:
-    app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
-    app.kubernetes.io/instance: "{{ if .Release }}{{ .Release.Name }}{{ else }}chart-template{{ end }}"
+    {{- include "chart-template.labels" . | nindent 4 }}
 spec:
   clusterIP: None
   {{ include "chart-template.ipFamilies" . | nindent 2 }}
@@ -267,17 +255,16 @@ spec:
       targetPort: {{ $p.targetPort }}
     {{- end }}
 {{- end }}
-
+---
 {{/* -------------------------------
       4) INGRESS (if enabled)
    ------------------------------- */}}
 {{- if .Values.ingress.enabled }}
----
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: "{{ include "chart-template.fullname" . }}-ingress"
-  namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
+  namespace: "{{ include "chart-template.namespace" . }}"
   annotations:
     kubernetes.io/ingress.class: "{{ .Values.ingress.className }}"
     cert-manager.io/cluster-issuer: "{{ .Values.ingress.tls.certManagerIssuer }}"
@@ -285,7 +272,7 @@ spec:
   {{- /* Build host list: main host plus any additional FQDNs */ -}}
   {{- $mainHost := printf "%s.%s" (include "chart-template.fullname" .) .Values.gateway.domain }}
   {{- $allHosts := list $mainHost }}
-  {{- range .Values.gateway.additionalHostnames }}
+  {{- range .Values.gateway.additionalFQDNHostnames }}
     {{- $allHosts = append $allHosts . }}
   {{- end }}
   tls:
@@ -315,7 +302,7 @@ spec:
           {{- end }}
     {{- end }}
 {{- end }}
-
+---
 {{/* -------------------------------
       5) GATEWAY API ROUTES (if gateway enabled)
          Generate:
@@ -348,36 +335,35 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: "{{ include "chart-template.fullname" . }}-httproute"
-  namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
+  name: "{{ include "chart-template.fullname" $ }}"
+  namespace: "{{ include "chart-template.namespace" $ }}"
   labels:
-    app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
-    app.kubernetes.io/instance: "{{ if .Release }}{{ .Release.Name }}{{ else }}chart-template{{ end }}"
-    app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
+    {{- include "chart-template.labels" $ | nindent 4 }}
     app.kubernetes.io/component: "httproute"
-    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 spec:
   parentRefs:
     - name: {{ $.Values.gateway.name }}
       namespace: "{{ $.Values.gateway.namespace }}"
+      {{- if $p.sectionName }}
+      sectionName: {{ $p.sectionName }}
+      {{- end }}
   hostnames:
-    {{- $mainHost := printf "%s.%s" (include "chart-template.fullname" .) $.Values.gateway.domain }}
+    {{- $mainHost := printf "%s.%s" (include "chart-template.fullname" $) $.Values.gateway.domain }}
     {{- $allHosts := list $mainHost }}
-    {{- range $.Values.gateway.additionalHostnames }}
+    {{- range $.Values.gateway.additionalFQDNHostnames }}
       {{- $allHosts = append $allHosts . }}
     {{- end }}
     {{- range $h := $allHosts }}
     - {{ $h }}
     {{- end }}
   rules:
-    
     - matches:
         - path:
             type: PathPrefix
             value: {{ if eq (int $p.servicePort) 80 }}"/"{{ else }}{{ printf "/%s" ($p.name | default (printf "port-%d" $index)) }}{{ end }}
       backendRefs:
-        - name: "{{ include "chart-template.fullname" . }}-service"
-          namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
+        - name: "{{ include "chart-template.fullname" $ }}-service"
+          namespace: "{{ include "chart-template.namespace" $ }}"
           port: {{ $p.servicePort }}
 {{- end }}
 {{- end }}
@@ -389,23 +375,22 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TCPRoute
 metadata:
-  name: "{{ include "chart-template.fullname" . }}-tcp-{{ $p.name | default (printf "port-%d" $index) }}"
-  namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
+  name: "{{ include "chart-template.fullname" $ }}-tcp-{{ $p.name | default (printf "port-%d" $index) }}"
+  namespace: "{{ include "chart-template.namespace" $ }}"
   labels:
-    app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
-    app.kubernetes.io/instance: "{{ if .Release }}{{ .Release.Name }}{{ else }}chart-template{{ end }}"
-    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    {{- include "chart-template.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: "tcproute"
 spec:
   parentRefs:
     - name: {{ $.Values.gateway.name }}
       namespace: "{{ $.Values.gateway.namespace }}"
-      {{- if $p.listenerName }}
-      sectionName: {{ $p.listenerName }}
+      {{- if $p.sectionName }}
+      sectionName: {{ $p.sectionName }}
       {{- end }}
   rules:
     - backendRefs:
-        - name: "{{ include "chart-template.fullname" . }}-service"
-          namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
+        - name: "{{ include "chart-template.fullname" $ }}-service"
+          namespace: "{{ include "chart-template.namespace" $ }}"
           port: {{ $p.servicePort }}
 {{- end }}
 {{- end }}
@@ -417,23 +402,23 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: UDPRoute
 metadata:
-  name: "{{ include "chart-template.fullname" . }}-udp-{{ $p.name | default (printf "port-%d" $index) }}"
-  namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
+  name: "{{ include "chart-template.fullname" $ }}-udp-{{ $p.name | default (printf "port-%d" $index) }}"
+  namespace: "{{ include "chart-template.namespace" $ }}"
   labels:
-    app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
-    app.kubernetes.io/instance: "{{ if .Release }}{{ .Release.Name }}{{ else }}chart-template{{ end }}"
-    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    {{- include "chart-template.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: "udproute"
 spec:
   parentRefs:
     - name: {{ $.Values.gateway.name }}
       namespace: "{{ $.Values.gateway.namespace }}"
-      {{- if $p.listenerName }}
-      sectionName: {{ $p.listenerName }}
+      {{- if $p.sectionName }}
+      sectionName: {{ $p.sectionName }}
       {{- end }}
   rules:
     - backendRefs:
-        - name: "{{ include "chart-template.fullname" . }}-service"
-          namespace: "{{ if .Release }}{{ .Release.Namespace | default "default" }}{{ else }}default{{ end }}"
+        - name: "{{ include "chart-template.fullname" $ }}-service"
+          namespace: "{{ include "chart-template.namespace" $ }}"
           port: {{ $p.servicePort }}
+{{- end }}
 {{- end }}
 {{- end }}

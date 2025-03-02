@@ -23,12 +23,24 @@ This checks if .Chart is available; if not, returns a default.
 {{- end }}
 
 {{/*
+Generate a helper for the namespace.
+Returns the namespace from .Release, or defaults to "default".
+*/}}
+{{- define "chart-template.namespace" -}}
+{{- if .Release -}}
+  {{ .Release.Namespace | default "default" }}
+{{- else -}}
+  default
+{{- end -}}
+{{- end }}
+
+{{/*
 Generate a standard set of labels.
 These labels include the chart name, release name, version, and a Helm identifier.
 */}}
 {{- define "chart-template.labels" -}}
 app.kubernetes.io/name: "{{ include "chart-template.name" . }}"
-app.kubernetes.io/instance: "{{ .Release.Name }}"
+app.kubernetes.io/instance: "{{ .Release.Name | default "chart-template" }}"
 app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
 app.kubernetes.io/managed-by: "Helm"
 helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -45,10 +57,12 @@ description: "Managed by Helm"
 Generate the ipFamilies block for Services.
 The ipFamilyPolicy is set from .Values.networking.ipFamilyPolicy (defaulting to PreferDualStack).
 If SingleStack is chosen, the singleStackIPFamily is used.
+An explicit newline is inserted between the policy and the ipFamilies key.
 */}}
 {{- define "chart-template.ipFamilies" -}}
 {{- $ipPolicy := default "PreferDualStack" .Values.networking.ipFamilyPolicy -}}
 ipFamilyPolicy: {{ $ipPolicy }}
+{{ "\n" -}}
 {{- if or (eq $ipPolicy "PreferDualStack") (eq $ipPolicy "RequireDualStack") -}}
 ipFamilies:
   - IPv4
