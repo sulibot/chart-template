@@ -108,21 +108,16 @@ spec:
             {{ toYaml . | nindent 12 }}
             {{- end }}
           {{- end }}
-
           ports:
             {{- $ports := .Values.ports | default list -}}
-            {{- if kindIs "slice" $ports }}
+            {{- if $ports }}
               {{- range $index, $p := $ports }}
-              {{- if kindIs "map" $p }}
               - name: {{ $p.name | default (printf "port-%d" $index) }}
                 containerPort: {{ required (printf "Error: .Values.ports[%d].targetPort is required" $index) $p.targetPort }}
-                protocol: {{ if $p.protocol }}{{ upper $p.protocol }}{{ else }}"TCP"{{ end }}
-              {{- else }}
-                {{- fail (printf "Error: .Values.ports[%d] is not a map" $index) }}
-              {{- end }}
+                protocol: {{ if and $p.protocol (eq (upper $p.protocol) "UDP") }}UDP{{ else }}TCP{{ end }}
               {{- end }}
             {{- else }}
-              {{- fail "Error: .Values.ports is not a valid list, check your values.yaml" }}
+              {{- fail "Error: .Values.ports is empty or missing, check your values.yaml" }}
             {{- end }}
           {{- if .Values.probes.liveness.enabled }}
           livenessProbe:
