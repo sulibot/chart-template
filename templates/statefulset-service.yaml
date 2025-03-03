@@ -272,11 +272,12 @@ metadata:
     kubernetes.io/ingress.class: "{{ .Values.ingress.className }}"
     cert-manager.io/cluster-issuer: "{{ .Values.ingress.tls.certManagerIssuer }}"
 spec:
-  {{- $mainHost := printf "%s.%s" (include "chart-template.fullname" .) .Values.gateway.domain }}
+  {{- $mainHost := printf "%s.%s" .Release.Name .Values.gateway.domain }}
   {{- $allHosts := list $mainHost }}
   {{- range .Values.gateway.additionalFQDNHostnames }}
     {{- $allHosts = append $allHosts . }}
   {{- end }}
+
   tls:
     - hosts:
         {{- range $h := $allHosts }}
@@ -351,7 +352,7 @@ spec:
       sectionName: {{ $p.sectionName }}
       {{- end }}
   hostnames:
-    {{- $mainHost := printf "%s.%s" (include "chart-template.fullname" $) $.Values.gateway.domain }}
+    {{- $mainHost := printf "%s.%s" .Release.Name $.Values.gateway.domain }}  # Ensures no namespace prefix
     {{- $allHosts := list $mainHost }}
     {{- range $.Values.gateway.additionalFQDNHostnames }}
       {{- $allHosts = append $allHosts . }}
@@ -359,6 +360,7 @@ spec:
     {{- range $h := $allHosts }}
     - {{ $h }}
     {{- end }}
+
   rules:
     - matches:
         - path:
