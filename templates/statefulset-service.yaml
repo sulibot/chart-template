@@ -108,12 +108,21 @@ spec:
             {{ toYaml . | nindent 12 }}
             {{- end }}
           {{- end }}
+
           ports:
-            {{- $ports := .Values.ports | default (list) -}}
-            {{- range $index, $p := $ports }}
-            - name: {{ $p.name | default (printf "port-%d" $index) }}
-              containerPort: {{ required (printf "Error: .Values.ports[%d].targetPort is required" $index) $p.targetPort }}
-              protocol: {{ if eq (upper $p.protocol) "UDP" }}"UDP"{{ else }}"TCP"{{ end }}
+            {{- $ports := .Values.ports | default list -}}
+            {{- if kindIs "slice" $ports }}
+              {{- range $index, $p := $ports }}
+              {{- if kindIs "map" $p }}
+              - name: {{ $p.name | default (printf "port-%d" $index) }}
+                containerPort: {{ required (printf "Error: .Values.ports[%d].targetPort is required" $index) $p.targetPort }}
+                protocol: {{ if $p.protocol }}{{ upper $p.protocol }}{{ else }}"TCP"{{ end }}
+              {{- else }}
+                {{- fail (printf "Error: .Values.ports[%d] is not a map" $index) }}
+              {{- end }}
+              {{- end }}
+            {{- else }}
+              {{- fail "Error: .Values.ports is not a valid list, check your values.yaml" }}
             {{- end }}
           {{- if .Values.probes.liveness.enabled }}
           livenessProbe:
@@ -272,11 +281,15 @@ metadata:
     kubernetes.io/ingress.class: "{{ .Values.ingress.className }}"
     cert-manager.io/cluster-issuer: "{{ .Values.ingress.tls.certManagerIssuer }}"
 spec:
-  {{- $mainHost := printf "%s.%s" .Release.Name .Values.gateway.domain }}
+  {{- $mainHost := printf "%s.%s" $.Release.Name $.Values.gateway.domain }}  # Use root scope ($)
   {{- $allHosts := list $mainHost }}
-  {{- range .Values.gateway.additionalFQDNHostnames }}
+  {{- range $.Values.gateway.additionalFQDNHostnames }}
     {{- $allHosts = append $allHosts . }}
   {{- end }}
+  {{- range $h := $allHosts }}
+  - {{ $h }}
+  {{- end }}
+
 
   tls:
     - hosts:
@@ -352,7 +365,7 @@ spec:
       sectionName: {{ $p.sectionName }}
       {{- end }}
   hostnames:
-    {{- $mainHost := printf "%s.%s" .Release.Name $.Values.gateway.domain }}  # Ensures no namespace prefix
+    {{- $mainHost := printf "%s.%s" $.Release.Name $.Values.gateway.domain }} 
     {{- $allHosts := list $mainHost }}
     {{- range $.Values.gateway.additionalFQDNHostnames }}
       {{- $allHosts = append $allHosts . }}
@@ -360,6 +373,8 @@ spec:
     {{- range $h := $allHosts }}
     - {{ $h }}
     {{- end }}
+
+
 
   rules:
     - matches:
