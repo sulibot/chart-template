@@ -1,33 +1,3 @@
-{{- /* 
-Statefulset-Service Template
-
-This template renders:
-1) A StatefulSet for the application.
-2) A Standard Service (if .Values.gateway.enabled or .Values.ingress.enabled).
-3) A Headless Service (if .Values.headless.enabled).
-4) An Ingress (if .Values.ingress.enabled).
-5) Gateway API routes (HTTPRoute/TCPRoute/UDPRoute) if .Values.gateway.enabled.
-
-Ports Configuration:
-Ports are defined in `.Values.ports`. For example:
-  - name: web-ui
-    targetPort: 3000       # Container port.
-    servicePort: 80        # Port exposed by the Service.
-    protocol: HTTP         # Defaults to HTTP if omitted (treated as TCP).
-    sectionName: web-listener   # (Optional) target a specific Gateway listener.
-  - name: admin
-    targetPort: 8443
-    servicePort: 8443
-    protocol: UDP
-    sectionName: admin-listener
-  - name: stream
-    targetPort: 9443
-    servicePort: 9443
-    protocol: TCP
-
-If no port name is provided, a default of "port-<index>" is generated.
-If servicePort is omitted, that port is not exposed externally.
-*/ -}}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -50,9 +20,7 @@ spec:
         app: "{{ include "chart-template.fullname" . }}"
         {{- include "chart-template.labels" . | nindent 8 }}
       annotations:
-        {{- with (default dict .Values.annotations.pod) }}
-        {{ toYaml . | nindent 8 }}
-        {{- end }}
+{{ toYaml (default dict .Values.annotations) | indent 8 }}
     spec:
       dnsPolicy: {{ .Values.dnsPolicy | default "ClusterFirst" }}
       {{- if .Values.dnsConfig.enabled }}
@@ -109,15 +77,12 @@ spec:
             {{- end }}
           {{- end }}
           ports:
-            {{- $ports := .Values.ports | default list -}}
-            {{- if $ports }}
-              {{- range $index, $p := $ports }}
-              - name: {{ $p.name | default (printf "port-%d" $index) }}
-                containerPort: {{ required (printf "Error: .Values.ports[%d].targetPort is required" $index) $p.targetPort }}
-                protocol: {{ if and $p.protocol (eq (upper $p.protocol) "UDP") }}UDP{{ else }}TCP{{ end }}
-              {{- end }}
-            {{- else }}
-              {{- fail "Error: .Values.ports is empty or missing, check your values.yaml" }}
+            {{- range $index, $p := .Values.ports }}
+            - name: {{ $p.name | default (printf "port-%d" $index) }}
+              containerPort: {{ $p.targetPort }}
+              protocol: {{- if hasKey $p "protocol" -}}
+                {{- if eq (upper (toString $p.protocol)) "UDP" }}UDP{{ else }}TCP{{ end }}
+              {{- else }}TCP{{- end }}
             {{- end }}
           {{- if .Values.probes.liveness.enabled }}
           livenessProbe:
@@ -207,9 +172,6 @@ spec:
         storageClassName: "{{ .Values.config.storageClassName | default "cephfs-csi-sc-retain" }}"
   {{- end }}
 ---
-{{/* -------------------------------
-      2) STANDARD SERVICE (if enabled)
-   ------------------------------- */}}
 {{- if or (.Values.gateway.enabled) (.Values.ingress.enabled) }}
 apiVersion: v1
 kind: Service
@@ -228,16 +190,15 @@ spec:
     {{- range $index, $p := $ports }}
     {{- if $p.servicePort }}
     - name: {{ $p.name | default (printf "port-%d" $index) }}
-      protocol: {{ if eq (upper $p.protocol) "UDP" }}"UDP"{{ else }}"TCP"{{ end }}
+      protocol: {{- if hasKey $p "protocol" -}}
+        {{- if eq (upper (toString $p.protocol)) "UDP" }}UDP{{ else }}TCP{{ end }}
+      {{- else }}TCP{{- end }}
       port: {{ $p.servicePort }}
       targetPort: {{ $p.targetPort }}
     {{- end }}
     {{- end }}
 {{- end }}
 ---
-{{/* -------------------------------
-      3) HEADLESS SERVICE (if enabled)
-   ------------------------------- */}}
 {{- if .Values.headless.enabled }}
 apiVersion: v1
 kind: Service
@@ -256,16 +217,15 @@ spec:
     {{- range $index, $p := $ports }}
     {{- if $p.servicePort }}
     - name: {{ $p.name | default (printf "port-%d" $index) }}
-      protocol: {{ if eq (upper $p.protocol) "UDP" }}"UDP"{{ else }}"TCP"{{ end }}
+      protocol: {{- if hasKey $p "protocol" -}}
+      {{- if eq (upper (toString $p.protocol)) "UDP" }}UDP{{ else }}TCP{{ end }}
+    {{- else }}TCP{{- end }}
       port: {{ $p.servicePort }}
       targetPort: {{ $p.targetPort }}
     {{- end }}
     {{- end }}
 {{- end }}
 ---
-{{/* -------------------------------
-      4) INGRESS (if enabled)
-   ------------------------------- */}}
 {{- if .Values.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -276,7 +236,7 @@ metadata:
     kubernetes.io/ingress.class: "{{ .Values.ingress.className }}"
     cert-manager.io/cluster-issuer: "{{ .Values.ingress.tls.certManagerIssuer }}"
 spec:
-  {{- $mainHost := printf "%s.%s" $.Release.Name $.Values.gateway.domain }}  # Use root scope ($)
+  {{- $mainHost := printf "%s.%s" $.Release.Name $.Values.gateway.domain }}
   {{- $allHosts := list $mainHost }}
   {{- range $.Values.gateway.additionalFQDNHostnames }}
     {{- $allHosts = append $allHosts . }}
@@ -284,8 +244,6 @@ spec:
   {{- range $h := $allHosts }}
   - {{ $h }}
   {{- end }}
-
-
   tls:
     - hosts:
         {{- range $h := $allHosts }}
@@ -315,13 +273,6 @@ spec:
     {{- end }}
 {{- end }}
 ---
-{{/* -------------------------------
-      5) GATEWAY API ROUTES (if gateway enabled)
-         Generate:
-           - HTTPRoute for HTTP ports,
-           - TCPRoute for TCP ports,
-           - UDPRoute for UDP ports.
-   ------------------------------- */}}
 {{- if $.Values.gateway.enabled }}
 {{- $ports := .Values.ports | default (list) -}}
 {{- $httpPorts := list -}}
@@ -339,8 +290,6 @@ spec:
     {{- $httpPorts = append $httpPorts $p -}}
   {{- end }}
 {{- end }}
-
-{{/* 5a) HTTPRoute for HTTP ports */}}
 {{- if gt (len $httpPorts) 0 }}
 {{- range $index, $p := $httpPorts }}
 ---
@@ -360,7 +309,7 @@ spec:
       sectionName: {{ $p.sectionName }}
       {{- end }}
   hostnames:
-    {{- $mainHost := printf "%s.%s" $.Release.Name $.Values.gateway.domain }} 
+    {{- $mainHost := printf "%s.%s" $.Release.Name $.Values.gateway.domain }}
     {{- $allHosts := list $mainHost }}
     {{- range $.Values.gateway.additionalFQDNHostnames }}
       {{- $allHosts = append $allHosts . }}
@@ -368,9 +317,6 @@ spec:
     {{- range $h := $allHosts }}
     - {{ $h }}
     {{- end }}
-
-
-
   rules:
     - matches:
         - path:
@@ -382,8 +328,6 @@ spec:
           port: {{ $p.servicePort }}
 {{- end }}
 {{- end }}
-
-{{/* 5b) TCPRoute for TCP ports */}}
 {{- if gt (len $tcpPorts) 0 }}
 {{- range $index, $p := $tcpPorts }}
 ---
@@ -409,8 +353,6 @@ spec:
           port: {{ $p.servicePort }}
 {{- end }}
 {{- end }}
-
-{{/* 5c) UDPRoute for UDP ports */}}
 {{- if gt (len $udpPorts) 0 }}
 {{- range $index, $p := $udpPorts }}
 ---

@@ -25,10 +25,14 @@ replicaCount: 1
 
 # Ports used by the container and Kubernetes Service.
 ports:
-  servicePort: 80             # The Service port inside the cluster
-  targetPort: 8080            # Container port
-  metricsPort: []             # (Optional) if your app exposes metrics
-  additionalPorts: []         # Additional ports to expose on the container
+  - name: web-ui
+    servicePort: 80             # The Service port inside the cluster
+    targetPort: 8080            # Container port
+  - name: admin-ui
+    servicePort: 8443             # The Service port inside the cluster
+    targetPort: 8443           # Container port
+    protocol: HTTP
+
 
 ###############################################################################
 # Timezone
@@ -214,7 +218,6 @@ labels:
   global: {}
 
 annotations:
-  pod: {}
 
 ###############################################################################
 # Optional Custom Commands and Arguments
