@@ -10,10 +10,10 @@ This template renders:
 
 Ports Configuration:
 Ports are defined in `.Values.ports`. For example:
-  - name: web
+  - name: web-ui
     targetPort: 3000       # Container port.
     servicePort: 80        # Port exposed by the Service.
-    protocol: HTTP         # Defaults to HTTP if omitted.
+    protocol: HTTP         # Defaults to HTTP if omitted (treated as TCP).
     sectionName: web-listener   # (Optional) target a specific Gateway listener.
   - name: admin
     targetPort: 8443
@@ -109,9 +109,11 @@ spec:
             {{- end }}
           {{- end }}
           ports:
-            {{- range $index, $p := .Values.ports }}
+            {{- $ports := .Values.ports | default (list) -}}
+            {{- range $index, $p := $ports }}
             - name: {{ $p.name | default (printf "port-%d" $index) }}
               containerPort: {{ required (printf "Error: .Values.ports[%d].targetPort is required" $index) $p.targetPort }}
+              protocol: {{ if eq (upper $p.protocol) "UDP" }}"UDP"{{ else }}"TCP"{{ end }}
             {{- end }}
           {{- if .Values.probes.liveness.enabled }}
           livenessProbe:
@@ -218,10 +220,11 @@ spec:
   selector:
     app: "{{ include "chart-template.fullname" . }}"
   ports:
-    {{- range $index, $p := .Values.ports }}
+    {{- $ports := .Values.ports | default (list) -}}
+    {{- range $index, $p := $ports }}
     {{- if $p.servicePort }}
     - name: {{ $p.name | default (printf "port-%d" $index) }}
-      protocol: {{ $p.protocol | default "HTTP" | upper | regexReplaceAll "HTTP" "TCP" | quote }}
+      protocol: {{ if eq (upper $p.protocol) "UDP" }}"UDP"{{ else }}"TCP"{{ end }}
       port: {{ $p.servicePort }}
       targetPort: {{ $p.targetPort }}
     {{- end }}
@@ -243,16 +246,16 @@ spec:
   clusterIP: None
   {{ include "chart-template.ipFamilies" . | nindent 2 }}
   selector:
-    {{- if .Values.headless.selector }}
-    {{ toYaml .Values.headless.selector | nindent 4 }}
-    {{- else }}
     app: "{{ include "chart-template.fullname" . }}"
-    {{- end }}
   ports:
-    {{- range $index, $p := .Values.ports }}
+    {{- $ports := .Values.ports | default (list) -}}
+    {{- range $index, $p := $ports }}
+    {{- if $p.servicePort }}
     - name: {{ $p.name | default (printf "port-%d" $index) }}
-      port: {{ $p.servicePort | default (required (printf "Error: .Values.ports[%d].targetPort is required for headless" $index) $p.targetPort) }}
+      protocol: {{ if eq (upper $p.protocol) "UDP" }}"UDP"{{ else }}"TCP"{{ end }}
+      port: {{ $p.servicePort }}
       targetPort: {{ $p.targetPort }}
+    {{- end }}
     {{- end }}
 {{- end }}
 ---
@@ -269,7 +272,6 @@ metadata:
     kubernetes.io/ingress.class: "{{ .Values.ingress.className }}"
     cert-manager.io/cluster-issuer: "{{ .Values.ingress.tls.certManagerIssuer }}"
 spec:
-  {{- /* Build host list: main host plus any additional FQDNs */ -}}
   {{- $mainHost := printf "%s.%s" (include "chart-template.fullname" .) .Values.gateway.domain }}
   {{- $allHosts := list $mainHost }}
   {{- range .Values.gateway.additionalFQDNHostnames }}
@@ -286,7 +288,8 @@ spec:
     - host: {{ $h }}
       http:
         paths:
-          {{- range $index, $p := .Values.ports }}
+          {{- $ports := .Values.ports | default (list) -}}
+          {{- range $index, $p := $ports }}
           {{- if $p.servicePort }}
           {{- $proto := $p.protocol | default "HTTP" | upper }}
           {{- if eq $proto "HTTP" }}
