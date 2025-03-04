@@ -20,8 +20,9 @@ spec:
         app: "{{ include "chart-template.fullname" . }}"
         {{- include "chart-template.labels" . | nindent 8 }}
       annotations:
-{{ toYaml (default dict .Values.annotations) | indent 8 }}
+{{ toYaml (default dict .Values.annotations) | nindent 8 }}
     spec:
+      serviceAccountName: "{{ .Values.serviceAccountName | default "default" }}"
       dnsPolicy: {{ .Values.dnsPolicy | default "ClusterFirst" }}
       {{- if .Values.dnsConfig.enabled }}
       dnsConfig:
@@ -82,7 +83,7 @@ spec:
               containerPort: {{ $p.targetPort }}
               protocol: {{- if hasKey $p "protocol" -}}
                 {{- if eq (upper (toString $p.protocol)) "UDP" }}UDP{{ else }}TCP{{ end }}
-              {{- else }}TCP{{- end }}
+              {{- else }} TCP{{- end }}
             {{- end }}
           {{- if .Values.probes.liveness.enabled }}
           livenessProbe:
@@ -123,13 +124,13 @@ spec:
           {{- end }}
           {{- if .Values.resources.enabled }}
           resources:
-            {{- if (omit .Values.resources.requests "enabled") }}
+            {{- if .Values.resources.requests }}
             requests:
-              {{ toYaml (omit .Values.resources.requests "enabled") | nindent 14 }}
+              {{- toYaml .Values.resources.requests | nindent 14 }}
             {{- end }}
             {{- if .Values.resources.limits }}
             limits:
-              {{ toYaml (omit .Values.resources.limits "enabled") | nindent 14 }}
+              {{- toYaml .Values.resources.limits | nindent 14 }}
             {{- end }}
           {{- end }}
           volumeMounts:
@@ -153,10 +154,12 @@ spec:
         {{- if .Values.volumesExtras }}
         {{ toYaml .Values.volumesExtras | nindent 8 }}
         {{- end }}
+
+      {{- if .Values.tolerations }}
       tolerations:
-        {{- if .Values.tolerations }}
-        {{ toYaml .Values.tolerations | nindent 8 }}
-        {{- end }}
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+
   {{- if .Values.config.enabled }}
   volumeClaimTemplates:
     - metadata:
@@ -192,7 +195,7 @@ spec:
     - name: {{ $p.name | default (printf "port-%d" $index) }}
       protocol: {{- if hasKey $p "protocol" -}}
         {{- if eq (upper (toString $p.protocol)) "UDP" }}UDP{{ else }}TCP{{ end }}
-      {{- else }}TCP{{- end }}
+      {{- else }} TCP{{- end }}
       port: {{ $p.servicePort }}
       targetPort: {{ $p.targetPort }}
     {{- end }}
@@ -219,7 +222,7 @@ spec:
     - name: {{ $p.name | default (printf "port-%d" $index) }}
       protocol: {{- if hasKey $p "protocol" -}}
       {{- if eq (upper (toString $p.protocol)) "UDP" }}UDP{{ else }}TCP{{ end }}
-    {{- else }}TCP{{- end }}
+    {{- else }} TCP{{- end }}
       port: {{ $p.servicePort }}
       targetPort: {{ $p.targetPort }}
     {{- end }}
