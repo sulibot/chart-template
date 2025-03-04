@@ -81,9 +81,7 @@ spec:
             {{- range $index, $p := .Values.ports }}
             - name: {{ $p.name | default (printf "port-%d" $index) }}
               containerPort: {{ $p.targetPort }}
-              protocol: {{- if hasKey $p "protocol" -}}
-                {{- if eq (upper (toString $p.protocol)) "UDP" }}UDP{{ else }}TCP{{ end }}
-              {{- else }} TCP{{- end }}
+              protocol: {{- if hasKey $p "protocol" }} {{ upper (toString $p.protocol) }}{{ else }} TCP{{- end }}
             {{- end }}
           {{- if .Values.probes.liveness.enabled }}
           livenessProbe:
@@ -193,13 +191,13 @@ spec:
     {{- range $index, $p := $ports }}
     {{- if $p.servicePort }}
     - name: {{ $p.name | default (printf "port-%d" $index) }}
-      protocol: {{- if hasKey $p "protocol" -}}
-        {{- if eq (upper (toString $p.protocol)) "UDP" }}UDP{{ else }}TCP{{ end }}
-      {{- else }} TCP{{- end }}
+      protocol: {{- if hasKey $p "protocol" }} {{ upper (toString $p.protocol) }}{{ else }} TCP{{- end }}
       port: {{ $p.servicePort }}
       targetPort: {{ $p.targetPort }}
     {{- end }}
     {{- end }}
+
+
 {{- end }}
 ---
 {{- if .Values.headless.enabled }}
@@ -220,9 +218,7 @@ spec:
     {{- range $index, $p := $ports }}
     {{- if $p.servicePort }}
     - name: {{ $p.name | default (printf "port-%d" $index) }}
-      protocol: {{- if hasKey $p "protocol" -}}
-      {{- if eq (upper (toString $p.protocol)) "UDP" }}UDP{{ else }}TCP{{ end }}
-    {{- else }} TCP{{- end }}
+      protocol: {{- if hasKey $p "protocol" }} {{ if eq (upper (toString $p.protocol)) "UDP" }}UDP{{ else }}TCP{{ end }}{{ else }} TCP{{- end }}
       port: {{ $p.servicePort }}
       targetPort: {{ $p.targetPort }}
     {{- end }}
