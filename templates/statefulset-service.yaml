@@ -83,10 +83,19 @@ spec:
           {{- end }}
           
           ports:
-            {{- range $index, $p := .Values.ports }}
+            {{- $ports := .Values.ports | default (list) -}}
+            {{- if kindIs "map" $ports }}
+            {{- /* Handle single port object format */ -}}
+            - name: {{ $ports.name | default "port-0" }}
+              containerPort: {{ $ports.targetPort }}
+              protocol: {{- if and (hasKey $ports "protocol") (eq (upper (toString $ports.protocol)) "UDP") }} UDP {{- else }} TCP {{- end }}
+            {{- else }}
+            {{- /* Handle array of ports format */ -}}
+            {{- range $index, $p := $ports }}
             - name: {{ $p.name | default (printf "port-%d" $index) }}
               containerPort: {{ $p.targetPort }}
               protocol: {{- if and (hasKey $p "protocol") (eq (upper (toString $p.protocol)) "UDP") }} UDP {{- else }} TCP {{- end }}
+            {{- end }}
             {{- end }}
 
           
@@ -197,12 +206,23 @@ spec:
     app: "{{ include "chart-template.fullname" . }}"
   ports:
     {{- $ports := .Values.ports | default (list) -}}
+    {{- if kindIs "map" $ports }}
+    {{- /* Handle single port object format */ -}}
+    {{- if $ports.servicePort }}
+    - name: {{ $ports.name | default "port-0" }}
+      protocol: {{- if hasKey $ports "protocol" }} {{ if eq (upper (toString $ports.protocol)) "UDP" }}UDP{{ else }}TCP{{ end }}{{ else }} TCP{{- end }}
+      port: {{ $ports.servicePort }}
+      targetPort: {{ $ports.targetPort }}
+    {{- end }}
+    {{- else }}
+    {{- /* Handle array of ports format */ -}}
     {{- range $index, $p := $ports }}
     {{- if $p.servicePort }}
     - name: {{ $p.name | default (printf "port-%d" $index) }}
       protocol: {{- if hasKey $p "protocol" }} {{ if eq (upper (toString $p.protocol)) "UDP" }}UDP{{ else }}TCP{{ end }}{{ else }} TCP{{- end }}
       port: {{ $p.servicePort }}
       targetPort: {{ $p.targetPort }}
+    {{- end }}
     {{- end }}
     {{- end }}
 
@@ -224,12 +244,23 @@ spec:
     app: "{{ include "chart-template.fullname" . }}"
   ports:
     {{- $ports := .Values.ports | default (list) -}}
+    {{- if kindIs "map" $ports }}
+    {{- /* Handle single port object format */ -}}
+    {{- if $ports.servicePort }}
+    - name: {{ $ports.name | default "port-0" }}
+      protocol: {{- if hasKey $ports "protocol" }} {{ if eq (upper (toString $ports.protocol)) "UDP" }}UDP{{ else }}TCP{{ end }}{{ else }} TCP{{- end }}
+      port: {{ $ports.servicePort }}
+      targetPort: {{ $ports.targetPort }}
+    {{- end }}
+    {{- else }}
+    {{- /* Handle array of ports format */ -}}
     {{- range $index, $p := $ports }}
     {{- if $p.servicePort }}
     - name: {{ $p.name | default (printf "port-%d" $index) }}
       protocol: {{- if hasKey $p "protocol" }} {{ if eq (upper (toString $p.protocol)) "UDP" }}UDP{{ else }}TCP{{ end }}{{ else }} TCP{{- end }}
       port: {{ $p.servicePort }}
       targetPort: {{ $p.targetPort }}
+    {{- end }}
     {{- end }}
     {{- end }}
 {{- end }}
