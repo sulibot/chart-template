@@ -295,6 +295,22 @@ spec:
       http:
         paths:
           {{- $ports := .Values.ports | default (list) -}}
+          {{- if kindIs "map" $ports }}
+          {{- /* Handle single port object format */ -}}
+          {{- if $ports.servicePort }}
+          {{- $proto := $ports.protocol | default "HTTP" | upper }}
+          {{- if eq $proto "HTTP" }}
+          - path: {{ if eq (int $ports.servicePort) 80 }}"/"{{ else }}{{ printf "/%s" ($ports.name | default "port-0") }}{{ end }}
+            pathType: Prefix
+            backend:
+              service:
+                name: "{{ include "chart-template.fullname" . }}-service"
+                port:
+                  number: {{ $ports.servicePort }}
+          {{- end }}
+          {{- end }}
+          {{- else }}
+          {{- /* Handle array of ports format */ -}}
           {{- range $index, $p := $ports }}
           {{- if $p.servicePort }}
           {{- $proto := $p.protocol | default "HTTP" | upper }}
@@ -309,6 +325,7 @@ spec:
           {{- end }}
           {{- end }}
           {{- end }}
+          {{- end }}
     {{- end }}
 {{- end }}
 ---
@@ -317,6 +334,20 @@ spec:
 {{- $httpPorts := list -}}
 {{- $tcpPorts := list -}}
 {{- $udpPorts := list -}}
+{{- if kindIs "map" $ports }}
+{{- /* Handle single port object format */ -}}
+  {{- $proto := $ports.protocol | default "HTTP" | upper -}}
+  {{- if eq $proto "HTTP" }}
+    {{- $httpPorts = append $httpPorts $ports -}}
+  {{- else if eq $proto "TCP" }}
+    {{- $tcpPorts = append $tcpPorts $ports -}}
+  {{- else if eq $proto "UDP" }}
+    {{- $udpPorts = append $udpPorts $ports -}}
+  {{- else }}
+    {{- $httpPorts = append $httpPorts $ports -}}
+  {{- end }}
+{{- else }}
+{{- /* Handle array of ports format */ -}}
 {{- range $index, $p := $ports }}
   {{- $proto := $p.protocol | default "HTTP" | upper -}}
   {{- if eq $proto "HTTP" }}
@@ -328,6 +359,7 @@ spec:
   {{- else }}
     {{- $httpPorts = append $httpPorts $p -}}
   {{- end }}
+{{- end }}
 {{- end }}
 {{- if gt (len $httpPorts) 0 }}
 {{- range $index, $p := $httpPorts }}
